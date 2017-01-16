@@ -1,1 +1,7 @@
 .idea/
+.v8flags.5.4.500.45.undefined.json
+.vscode
+.pki
+*.js
+*.js.map
+node_modules
