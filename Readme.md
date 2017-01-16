@@ -6,5 +6,5 @@ managing the HaoShiYou wechat groups run by volunteers of haoshiyou.org
 To start running 
 
 ```bash
-
+docker run -ti --volume="$(pwd)":/bot --rm zixia/wechaty main.ts
 ```
