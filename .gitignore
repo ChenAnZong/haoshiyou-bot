@@ -5,3 +5,5 @@
 *.js
 *.js.map
 node_modules
+log.json
+.cache

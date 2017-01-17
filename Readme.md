@@ -9,7 +9,6 @@ To start running in a docker
 docker run -ti --volume="$(pwd)":/bot --rm zixia/wechaty main.ts
 ```
 
-
 ## Roadmap
 
 * Basic function 
