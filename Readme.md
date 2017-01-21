@@ -22,7 +22,7 @@ docker run -ti --volume="$(pwd)":/bot --rm zixia/wechaty main.ts
   - [ ] Privately poked group members who haven't update the group nickname.
 
 * Logging
-  - [ ] Logging chat data for future research.
+  - [X] Logging chat data for future research.
  
 * Integration function
   - [ ] Auto-detect an user is posting a listing of for rent or find home.

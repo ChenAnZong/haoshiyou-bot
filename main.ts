@@ -1,4 +1,4 @@
-import {Wechaty, Room} from "wechaty";
+import {Wechaty, Room, Contact} from "wechaty";
 import {HsyBotLogger} from "./logger";
 import {FriendRequest} from "wechaty/dist/src/friend-request";
 
@@ -63,7 +63,9 @@ bot
 
             console.log(`Adding group...`);
             let keyroom = await Room.find({topic: /好室友.*南湾西/});
+
             console.log(`Found group...`);
+            await downsizeRoom(keyroom);
             if (keyroom) {
               console.log(`Adding the contact: ${contact}`);
               await keyroom.add(contact);
@@ -142,3 +144,7 @@ bot
 
     .init();
 
+let downsizeRoom = async function(room:Room) {
+  let contacts = room.memberList();
+  console.log(JSON.stringify(contacts));
+}
