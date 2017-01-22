@@ -93,6 +93,8 @@ bot
           }
           shouldRemoveList.forEach((c:Contact) => {
             console.log(`INFO Deleting contact ${c.name()} from group ${keyroom.topic()}`);
+            c.say(`亲~你在${keyroom.topic()}待着太久了或者还没有按照规则修改群昵称，` +
+                `我先把你挪出本群哈，随时加我重新入群`); // a promise, but we won't wait.
             keyroom.del(c); // a promise, but we won't wait.
           });
         } else {

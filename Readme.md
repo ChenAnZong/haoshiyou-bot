@@ -14,12 +14,12 @@ docker run -ti --volume="$(pwd)":/bot --rm zixia/wechaty main.ts
 * Basic function 
   - [X] Auto-accept Friend Request
   - [X] Detect user group-join intention to add to a specific group
-  - [ ] Delete user when groups approach to max member limit - say, 480 members.
+  - [X] Delete user when groups approach to max member limit - say, 480 members.
       - Never delete group admins (a whitelist).
       - Delete the first 30 members that are not renaming their nick names in the 
         designated format.
       - Delete the first 10 members that was added to the group the earliests.
-  - [ ] Privately poked group members who haven't update the group nickname.
+  - [X] Privately poked group members who haven't update the group nickname.
 
 * Logging
   - [X] Logging chat data for future research.
