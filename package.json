@@ -12,5 +12,30 @@
     "install-chromedriver": "node node_modules/chromedriver/install.js",
     "pretest_e2e": "npm run install-chromedriver",
     "test_e2e": "node release/test/rune2e.js"
-  }
+  },
+  "name": "haoshiyou-bot",
+  "description": "[![Powered by Wechaty](https://img.shields.io/badge/Powered%20By-Wechaty-green.svg)](https://github.com/wechaty/wechaty)",
+  "version": "1.0.1",
+  "main": "main.js",
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xinbenlv/haoshiyou-bot.git"
+  },
+  "keywords": [
+    "haoshiyou",
+    "haoshiyou.org",
+    "chatbot",
+    "wechaty",
+    "wechat",
+    "rent",
+    "house",
+    "roommate"
+  ],
+  "author": "Zainan Victor Zhou",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/xinbenlv/haoshiyou-bot/issues"
+  },
+  "homepage": "https://github.com/xinbenlv/haoshiyou-bot#readme"
 }

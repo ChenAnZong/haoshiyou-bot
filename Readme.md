@@ -1,4 +1,7 @@
 # Haoshiyou-Bot
+
+[![Powered by Wechaty](https://img.shields.io/badge/Powered%20By-Wechaty-green.svg)](https://github.com/wechaty/wechaty)
+
 A chat bot supported on [WeChaty](http://blog.wechaty.io),
 managing the HaoShiYou wechat groups run by volunteers of haoshiyou.org
 
