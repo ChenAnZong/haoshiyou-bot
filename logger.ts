@@ -2,8 +2,8 @@ import {Message, Contact} from "wechaty";
 import {FriendRequest} from "wechaty/dist/src/friend-request";
 
 const file = 'log.json';
-let jsonfile = require('jsonfile');
-
+const jsonfile = require('jsonfile');
+const util = require('util');
 class HsyBotLogObject {
   public type: HsyBotLoggerType;
   public contact:Contact;
@@ -69,8 +69,9 @@ export class HsyBotLogger {
   }
 
   private static async log(logItem:HsyBotLogObject):Promise<void> {
-    console.log(`XXX DEBUG LOG ${JSON.stringify(logItem)}`);
-    await jsonfile.writeFileSync(file, logItem, {flag: 'a'});
+    let inspectedLogItem = util.inspect(logItem);
+    console.log(`XXX DEBUG LOG ${JSON.stringify(inspectedLogItem)}`);
+    await jsonfile.writeFileSync(file, inspectedLogItem, {flag: 'a'});
   }
 
   public static async logDebug(str:string):Promise<void> {
