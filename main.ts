@@ -153,7 +153,7 @@ let maybeAddToHsyGroups = async function(m:Message) {
       groupType = HsyGroupEnum.SanFrancisco;
     } else if (/短租/.test(content)) {
       groupToAdd = "短租";
-      groupType = HsyGroupEnum.MidPeninsula;
+      groupType = HsyGroupEnum.ShortTerm;
     } else if (/testbotgroup/.test(content)) {
       groupToAdd = "testgroup";
       groupType = HsyGroupEnum.TestGroup;
