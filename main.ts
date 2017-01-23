@@ -2,10 +2,14 @@ import {Wechaty, Room, Contact, Message, FriendRequest} from "wechaty";
 import {HsyBotLogger, HsyGroupEnum} from "./logger";
 
 console.log(`--- HsyBot Starts! ---`);
+
+
+
 const bot = Wechaty.instance();
 const newComerSize = 100;
 const groupDownSizeTarget = 450;
 const groupDownSizeTriggerThreshold = 490;
+const hsyCannotUnderstandMsg = `小助手没听懂你说啥意思哈，回复【加群】了解怎样加入租房群。`;
 const hsyGreetingsMsg =
     `你好，谢谢你加我们群，请问你要在哪个区域找房子或者室友？\n` +
     `我们是按照区域分群的。我拉你入群：\n` +
@@ -19,24 +23,47 @@ const hsyGreetingsMsg =
     `另外如果你在我们群里找到了室友或者房子，欢迎加入我们的【好室友】"老友群"，闲聊~，` +
     `详情请私信群主周载南(wechat:xinbenlv)或者入口群里的管理员们`;
 
-const hsyGroupNickNameMsg =
-    `我们的群规是：\n` +
-    `  1⃣在群里介绍您的需求。\n`+
-    `  2⃣️按要求修改群昵称，格式为“求/招-区域-时间-全真名”，例如 "求-SV-3月-王小明"表示` +
-        `你是王小明，求租3月在Sunnyvale附近的房子。` +
-        `另外如果你没有立即的需求，可以用"介-张小红"作为群昵称，介字表示你留在群里的主要目的是帮朋友介绍入群，` +
-        `我们不会在定期清理中清除介绍类的群友。\n` +
-    `  3⃣️已经match的群友可以联系管理员，加入“【好室友】老友群” 本群只发布租求相关信息，严禁发布广告，` +
-        `任何其他需求请私信管理员寻求帮助。\n` +
-    `  4⃣️【好室友】短租群（流动群），提高效率，会定期移除进群较早和没有按要求修改昵称的朋友，` +
-        `如果您尚未match请到haoshiyou.org再次扫描二维码进群，并按要求修改群昵称\n` +
-    `  5⃣️本群不为任何群友做背书，请大家本着对自己及他人负责的态度，对信息仔细筛选，` +
-        `房屋室友审慎考虑，找人有风险，出租需谨慎.\n` +
-    `  6⃣️需要转发、查看信息也可添加“好室友小帮手”ID：haoshiyou-admin;\n` +
-    `🈴友情链接：如果你们刚来湾区想要参加各种社交活动拓展社交圈，` +
-        `也可以找“九尾萌盟社交平台”添加微信foxinthebay02或者关注公众号：foxinthebay\n` +
-    `🈴友情链接：如果您对创业投资感兴趣，欢迎搜索湾区最牛创业组织，` +
-        `微信公众平台“硅谷创业者联盟” or 公众号“svace-org”\n`;
+const hysAlreadyAddedMsg = `已邀请，请点击加入[湾区好室友]系列租房群。`;
+
+const hsyGroupNickNameMsg = `
+ 
+提醒一下小伙伴记得按照要求修改群昵称哦，格式为“求/招-区域-时间-全真名”，
+例如 "求-SV-3月-王小明"表示你是王小明，求租3月在Sunnyvale附近的房子。
+请大家把昵称改为如下格式：“招/求/-地点-时间-真全名”，例如:
+ 
+“招-mtv-5/1-王小明”表示你是王小明，招租房客，房子地点在 Mountain View，时间5月1日开始。 
+“求-pa-4/12-韩梅梅”表示你是韩梅梅，求租房子，房子地点在 Palo Alto，时间4月1日开始。 
+“介-李雷”表示你是李雷，在群里目前没有需求，仅为了介绍朋友进群。“介”这类可以不写时间地点。 
+
+本群中对地点常用缩写约定如下：
+  SF-San Francisco,  
+  PA-Palo Alto,  
+  MTV-Mountain View,  
+  SV-Sunnyvale,  
+  FMNT-Fremont,  
+  SJ-San Jose,
+  MPTS-Milpitas；
+  
+好室友系列租房群会自动定期清理没有修改群昵称的群友，以及最早的群友以便给新人腾位置。
+`;
+
+    // `我们的群规是：\n` +
+    // `  1⃣在群里介绍您的需求。\n` +
+    // `  2⃣️按要求修改群昵称，格式为“求/招-区域-时间-全真名”，例如 "求-SV-3月-王小明"表示` +
+    //     `你是王小明，求租3月在Sunnyvale附近的房子。` +
+    //     `另外如果你没有立即的需求，可以用"介-张小红"作为群昵称，介字表示你留在群里的主要目的是帮朋友介绍入群，` +
+    //     `我们不会在定期清理中清除介绍类的群友。\n` +
+    // `  3⃣️已经match的群友可以联系管理员，加入“【好室友】老友群” 本群只发布租求相关信息，严禁发布广告，` +
+    //     `任何其他需求请私信管理员寻求帮助。\n` +
+    // `  4⃣️【好室友】短租群（流动群），提高效率，会定期移除进群较早和没有按要求修改昵称的朋友，` +
+    //     `如果您尚未match请到haoshiyou.org再次扫描二维码进群，并按要求修改群昵称\n` +
+    // `  5⃣️本群不为任何群友做背书，请大家本着对自己及他人负责的态度，对信息仔细筛选，` +
+    //     `房屋室友审慎考虑，找人有风险，出租需谨慎.\n` +
+    // `  6⃣️需要转发、查看信息也可添加“好室友小帮手”ID：haoshiyou-admin;\n` +
+    // `🈴友情链接：如果你们刚来湾区想要参加各种社交活动拓展社交圈，` +
+    //     `也可以找“九尾萌盟社交平台”添加微信foxinthebay02或者关注公众号：foxinthebay\n` +
+    // `🈴友情链接：如果您对创业投资感兴趣，欢迎搜索湾区最牛创业组织，` +
+    //     `微信公众平台“硅谷创业者联盟” or 公众号“svace-org”\n`;
 
 const hsyGroupClearMsg =
     `亲爱的各位好室友租房群的群友们，现在群快满了，清理一批群友给新朋友们腾位置。\n` +
@@ -76,8 +103,8 @@ bot
       if (m.self()) {
         return; // Early return for talking to myself.
       }
-
       await maybeAddToHsyGroups(m);
+      await extractPostingMessage(m);
     })
 
     .init()
@@ -132,11 +159,13 @@ let maybeAddToHsyGroups = async function(m:Message) {
   const room = m.room();
   let groupType:HsyGroupEnum;
   // only to me or entry group
-  if (m.rawObj['MMIsChatRoom'] == false || /好室友.*入口群/.test(m.room().topic())) {
+  if (isTalkingToMePrivately(m) || /好室友.*入口群/.test(m.room().topic())) {
     HsyBotLogger.logDebug('Talking to 好室友 admin');
     let groupToAdd = null;
-
-    if (/南湾西|Mountain View|mtv|sv|Sunnyvale|Palo Alto|Stanford|Facebook|Google|Menlo Park/.test(content)) {
+    if (/加群/.test(content)) {
+      await m.say(hsyGreetingsMsg);
+      return;
+    } else if (/南湾西|Mountain View|mtv|sv|Sunnyvale|Palo Alto|Stanford|Facebook|Google|Menlo Park/.test(content)) {
       groupToAdd = "南湾西";
       groupType = HsyGroupEnum.SouthBayEast;
     } else if (/南湾东|Milpitas|San Jose|Santa Clara|SJ|Campbell|Los Gatos/.test(content)) {
@@ -159,18 +188,17 @@ let maybeAddToHsyGroups = async function(m:Message) {
       groupType = HsyGroupEnum.TestGroup;
     }
     if (groupToAdd == null) { // found no valid group
-      await m.say(hsyGreetingsMsg);
+      await m.say(hsyCannotUnderstandMsg);
     } else {
       await HsyBotLogger.logDebug(`Start to add ${contact} to room ${groupToAdd}.`);
-
       await HsyBotLogger.logBotAddToGroupEvent(contact, groupType);
       await m.say(`好的，你要加${groupToAdd}的群对吧，我这就拉你进群。`);
       let typeRegEx = new RegExp(`好室友.*` + groupToAdd);
       let keyroom = await Room.find({topic: typeRegEx});
       if (keyroom) {
-        await keyroom.add(contact);
         await maybeDownsizeKeyRoom(keyroom);
-        await contact.say("已加，欢迎加入湾区【好室友】系列租房群。");
+        await keyroom.add(contact);
+        await contact.say(hysAlreadyAddedMsg);
         await contact.say(hsyGroupNickNameMsg);
 
       } else {
@@ -180,4 +208,17 @@ let maybeAddToHsyGroups = async function(m:Message) {
     }
   }
 
+};
+
+let isTalkingToMePrivately = function(m:Message) {
+  return m.rawObj['MMIsChatRoom'] == false;
+};
+
+let extractPostingMessage = async function(m:Message) {
+  if (isTalkingToMePrivately(m) || /好室友/.test(m.room().topic())) {
+    if (m.content().length >= 80 &&
+        /租|rent|roomate|小区|公寓|lease/.test(m.content())) {
+      HsyBotLogger.logListing(m);
+    }
+  }
 };

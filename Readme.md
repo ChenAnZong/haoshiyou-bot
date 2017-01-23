@@ -28,7 +28,7 @@ docker run -ti --volume="$(pwd)":/bot --rm zixia/wechaty main.ts
   - [X] Logging chat data for future research.
  
 * Integration function
-  - [ ] Auto-detect an user is posting a listing of for rent or find home.
+  - [X] Auto-detect an user is posting a listing of for rent or find home.
   - [ ] Post to Haoshiyou-Server
 
 * Advance function

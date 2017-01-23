@@ -2,6 +2,7 @@ import {Message, Contact} from "wechaty";
 import {FriendRequest} from "wechaty/dist/src/friend-request";
 
 const file = 'log.json';
+const fileListings = 'potential-posting.json';
 const jsonfile = require('jsonfile');
 const util = require('util');
 class HsyBotLogObject {
@@ -45,8 +46,9 @@ export enum HsyBotLoggerType {
 }
 
 export class HsyBotLogger {
-  public static async logBotAddToGroupEvent(contact:Contact,
-                                            groupEnum:HsyGroupEnum):Promise<void> {
+  public static async logBotAddToGroupEvent(
+      contact:Contact,
+      groupEnum:HsyGroupEnum):Promise<void> {
     let logItem = new HsyBotLogObject();
     logItem.type = HsyBotLoggerType.botAddToGroupEvent;
     logItem.groupEnum = groupEnum;
@@ -70,7 +72,7 @@ export class HsyBotLogger {
 
   private static async log(logItem:HsyBotLogObject):Promise<void> {
     let inspectedLogItem = util.inspect(logItem);
-    console.log(`XXX DEBUG LOG ${JSON.stringify(inspectedLogItem)}`);
+    if (logItem.type != HsyBotLoggerType.chatEvent) console.log(`XXX DEBUG LOG ${JSON.stringify(inspectedLogItem)}`);
     await jsonfile.writeFileSync(file, inspectedLogItem, {flag: 'a'});
   }
 
@@ -79,5 +81,16 @@ export class HsyBotLogger {
     logItem.type = HsyBotLoggerType.debugInfo;
     logItem.debugMessage = str;
     await this.log(logItem);
+  }
+
+  public static async logListing(m:Message) {
+    let c:Contact = m.from();
+    let listing = {
+      contact: c.name(),
+      groupNickName: c['rawObj']['DisplayName'],
+      content: m.content()
+    };
+    console.log(`XXX POTENTIAL LISTING ${JSON.stringify(listing)}`);
+    await jsonfile.writeFileSync(fileListings, listing, {flag: 'a'});
   }
 }
