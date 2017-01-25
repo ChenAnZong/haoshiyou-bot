@@ -1,13 +1,18 @@
 {
   "dependencies": {
+    "@purest/providers": "^1.0.0",
     "@types/express": "^4.0.34",
+    "bluebird": "^3.4.7",
     "chromedriver": "^2.27.2",
     "express": "^4.14.0",
     "jsonfile": "^2.4.0",
+    "purest": "^3.0.1",
     "qrcode-terminal": "^0.11.0",
+    "request": "^2.79.0",
     "wechaty": "^0.7.3"
   },
   "scripts": {
+    "docker": "docker run -ti --volume=\"$(pwd)\":/bot --rm zixia/wechaty main.ts",
     "preinstall-chromedriver": "npm install",
     "install-chromedriver": "node node_modules/chromedriver/install.js",
     "pretest_e2e": "npm run install-chromedriver",

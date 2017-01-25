@@ -3,12 +3,10 @@ import {HsyBotLogger, HsyGroupEnum} from "./logger";
 
 console.log(`--- HsyBot Starts! ---`);
 
-
-
 const bot = Wechaty.instance();
-const newComerSize = 100;
+const newComerSize = 200;
 const groupDownSizeTarget = 450;
-const groupDownSizeTriggerThreshold = 490;
+const groupDownSizeTriggerThreshold = 475;
 const hsyCannotUnderstandMsg = `小助手没听懂你说啥意思哈，回复【加群】了解怎样加入租房群。`;
 const hsyGreetingsMsg =
     `你好，谢谢你加我们群，请问你要在哪个区域找房子或者室友？\n` +
@@ -47,23 +45,7 @@ const hsyGroupNickNameMsg = `
 好室友系列租房群会自动定期清理没有修改群昵称的群友，以及最早的群友以便给新人腾位置。
 `;
 
-    // `我们的群规是：\n` +
-    // `  1⃣在群里介绍您的需求。\n` +
-    // `  2⃣️按要求修改群昵称，格式为“求/招-区域-时间-全真名”，例如 "求-SV-3月-王小明"表示` +
-    //     `你是王小明，求租3月在Sunnyvale附近的房子。` +
-    //     `另外如果你没有立即的需求，可以用"介-张小红"作为群昵称，介字表示你留在群里的主要目的是帮朋友介绍入群，` +
-    //     `我们不会在定期清理中清除介绍类的群友。\n` +
-    // `  3⃣️已经match的群友可以联系管理员，加入“【好室友】老友群” 本群只发布租求相关信息，严禁发布广告，` +
-    //     `任何其他需求请私信管理员寻求帮助。\n` +
-    // `  4⃣️【好室友】短租群（流动群），提高效率，会定期移除进群较早和没有按要求修改昵称的朋友，` +
-    //     `如果您尚未match请到haoshiyou.org再次扫描二维码进群，并按要求修改群昵称\n` +
-    // `  5⃣️本群不为任何群友做背书，请大家本着对自己及他人负责的态度，对信息仔细筛选，` +
-    //     `房屋室友审慎考虑，找人有风险，出租需谨慎.\n` +
-    // `  6⃣️需要转发、查看信息也可添加“好室友小帮手”ID：haoshiyou-admin;\n` +
-    // `🈴友情链接：如果你们刚来湾区想要参加各种社交活动拓展社交圈，` +
-    //     `也可以找“九尾萌盟社交平台”添加微信foxinthebay02或者关注公众号：foxinthebay\n` +
-    // `🈴友情链接：如果您对创业投资感兴趣，欢迎搜索湾区最牛创业组织，` +
-    //     `微信公众平台“硅谷创业者联盟” or 公众号“svace-org”\n`;
+
 
 const hsyGroupClearMsg =
     `亲爱的各位好室友租房群的群友们，现在群快满了，清理一批群友给新朋友们腾位置。\n` +
@@ -122,7 +104,7 @@ let maybeDownsizeKeyRoom = async function(keyroom: Room) {
     for (let i = 0; i < keyroom.memberList().length - newComerSize/* never newComer */; i++) {
       let c:Contact = cList[i];
       if (c.self()) continue; // never does anything with haoshiyou-admin itself.
-      let groupNickName = c['rawObj']['DisplayName'];
+      let groupNickName = getGroupNickNameFromContact(c);
       if (/^(管|介|群主)-/.test(groupNickName)) {
         // pass, never remove
       } else if (/^(招|求)租/.test(groupNickName)) {
@@ -143,8 +125,12 @@ let maybeDownsizeKeyRoom = async function(keyroom: Room) {
     }
     await Promise.all(shouldRemoveList.map(async (c:Contact) => {
       await HsyBotLogger.logDebug(`Deleting contact ${c.name()} from group ${keyroom.topic()}`);
-      await c.say(`亲~你在${keyroom.topic()}待着太久了或者还没有按照规则修改群昵称，` +
-          `我先把你挪出本群哈，随时加我重新入群`);
+      let msg = `亲~你在${keyroom.topic()}里面` +
+          /^(招|求)租/.test(getGroupNickNameFromContact(c)) ?
+          `待得比较久了，如果你已经在群里找到室友或者贩子，请找群主周载南(xinbenlv)拉"老友群"，` :
+          `没有按照规则修改群昵称，` +
+          `这里我先把你挪出本群哈，随时加我（小助手，微信号haoshiyou-admin）重新入群。`;
+      await c.say(msg);
       await keyroom.del(c);
     }));
   } else {
@@ -221,4 +207,8 @@ let extractPostingMessage = async function(m:Message) {
       HsyBotLogger.logListing(m);
     }
   }
+};
+
+let getGroupNickNameFromContact = function(c:Contact) {
+  return c['rawObj']['DisplayName'];
 };

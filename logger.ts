@@ -91,6 +91,7 @@ export class HsyBotLogger {
       content: m.content()
     };
     console.log(`XXX POTENTIAL LISTING ${JSON.stringify(listing)}`);
+
     await jsonfile.writeFileSync(fileListings, listing, {flag: 'a'});
   }
 }

@@ -36,3 +36,6 @@ docker run -ti --volume="$(pwd)":/bot --rm zixia/wechaty main.ts
   - [ ] Based on conversation session state, etract photos posted followed 
         by the previous post.
   - [ ] Post to Haoshiyou-Server with extracted information, and create account.
+
+* Management Function
+  - [ ] Kick a group member if received kicking instruction from a group admin
