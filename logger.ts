@@ -31,6 +31,7 @@ export enum HsyGroupEnum {
   SanFrancisco = 4,
   MidPeninsula = 5,
   ShortTerm = 6,
+  OldFriends = 7,
 }
 
 /**

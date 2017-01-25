@@ -5,8 +5,8 @@ console.log(`--- HsyBot Starts! ---`);
 
 const bot = Wechaty.instance();
 const newComerSize = 200;
-const groupDownSizeTarget = 450;
-const groupDownSizeTriggerThreshold = 475;
+const groupDownSizeTarget = 465;
+const groupDownSizeTriggerThreshold = 480;
 const hsyCannotUnderstandMsg = `小助手没听懂你说啥意思哈，回复【加群】了解怎样加入租房群。`;
 const hsyGreetingsMsg =
     `你好，谢谢你加我们群，请问你要在哪个区域找房子或者室友？\n` +
@@ -93,7 +93,8 @@ bot
     .then(async _ => await HsyBotLogger.logDebug(`HsyBot is terminated`))
     .catch(async e => await HsyBotLogger.logDebug(e));
 
-let maybeDownsizeKeyRoom = async function(keyroom: Room) {
+let maybeDownsizeKeyRoom = async function(keyroom: Room, c:Contact) {
+  if (/老友/.test(keyroom.topic())) return;
   if (keyroom.memberList().length >= groupDownSizeTriggerThreshold) { // triggering
     await keyroom.say(hsyGroupClearMsg);
     let potentialRotationList = [];
@@ -123,12 +124,16 @@ let maybeDownsizeKeyRoom = async function(keyroom: Room) {
         break;
       }
     }
+    if (shouldRemoveList.length > 0) {
+      await c.say(`群里有点儿满，我先清一下人哦`);
+    }
     await Promise.all(shouldRemoveList.map(async (c:Contact) => {
       await HsyBotLogger.logDebug(`Deleting contact ${c.name()} from group ${keyroom.topic()}`);
-      let msg = `亲~你在${keyroom.topic()}里面` +
-          /^(招|求)租/.test(getGroupNickNameFromContact(c)) ?
-          `待得比较久了，如果你已经在群里找到室友或者贩子，请找群主周载南(xinbenlv)拉"老友群"，` :
-          `没有按照规则修改群昵称，` +
+      let msg = (`亲 ~ 你在${keyroom.topic()}里面`) +
+          (/^(招|求)租/.test(getGroupNickNameFromContact(c)) ?
+          `待得比较久了，如果你已经在群里找到室友或者房子，恭喜你！`  +
+          `请联系群主 周载南（微信号xinbenlv）加入"老友群"，` :
+          `没有按照规则修改群昵称，`) +
           `这里我先把你挪出本群哈，随时加我（小助手，微信号haoshiyou-admin）重新入群。`;
       await c.say(msg);
       await keyroom.del(c);
@@ -172,6 +177,9 @@ let maybeAddToHsyGroups = async function(m:Message) {
     } else if (/testbotgroup/.test(content)) {
       groupToAdd = "testgroup";
       groupType = HsyGroupEnum.TestGroup;
+    } else if (/老友/.test(content)) {
+      groupToAdd = "老友";
+      groupType = HsyGroupEnum.OldFriends;
     }
     if (groupToAdd == null) { // found no valid group
       await m.say(hsyCannotUnderstandMsg);
@@ -182,7 +190,7 @@ let maybeAddToHsyGroups = async function(m:Message) {
       let typeRegEx = new RegExp(`好室友.*` + groupToAdd);
       let keyroom = await Room.find({topic: typeRegEx});
       if (keyroom) {
-        await maybeDownsizeKeyRoom(keyroom);
+        await maybeDownsizeKeyRoom(keyroom, contact);
         await keyroom.add(contact);
         await contact.say(hysAlreadyAddedMsg);
         await contact.say(hsyGroupNickNameMsg);
