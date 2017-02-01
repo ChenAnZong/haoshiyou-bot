@@ -23,6 +23,7 @@ docker run -ti --volume="$(pwd)":/bot --rm zixia/wechaty main.ts
         designated format.
       - Delete the first 10 members that was added to the group the earliests.
   - [X] Privately poked group members who haven't update the group nickname.
+  - [ ] Automatically delete friends if approaching 5000 friends cap. 
 
 * Logging
   - [X] Logging chat data for future research.

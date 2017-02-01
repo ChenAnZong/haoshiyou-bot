@@ -16,7 +16,8 @@ const hsyGreetingsMsg =
     `  【东湾】湾东边Milpitas以北，包括Fremont，Hayward，Berkeley等；\n` +
     `  【中半岛】Redwood以北，San Francisco以南；\n` +
     `  【三番】旧金山(San Francisco)城里，含South San Francisco；\n`+
-    `  【短租】如果你希望在湾区任意地方内进行3个月以内短租（出租和求租），请加短租群；\n`+
+    `  【西雅图】我们新开设了西雅图好室友群，服务大西雅图地区；\n`+
+    `  【短租】如果你希望在旧金山湾区任意地方内进行3个月以内短租（出租和求租），请加短租群；\n`+
     `请回复要加哪个群，例如： 南湾西\n` +
     `另外如果你在我们群里找到了室友或者房子，欢迎加入我们的【好室友】"老友群"，闲聊~，` +
     `详情请私信群主周载南(wechat:xinbenlv)或者入口群里的管理员们`;
@@ -40,7 +41,9 @@ const hsyGroupNickNameMsg = `
   SV-Sunnyvale,  
   FMNT-Fremont,  
   SJ-San Jose,
-  MPTS-Milpitas；
+  MPTS-Milpitas,
+  SEA - Seattle
+  KIR - Kirkland
   
 好室友系列租房群会自动定期清理没有修改群昵称的群友，以及最早的群友以便给新人腾位置。
 `;
@@ -106,7 +109,8 @@ let maybeDownsizeKeyRoom = async function(keyroom: Room, c:Contact) {
       let c:Contact = cList[i];
       if (c.self()) continue; // never does anything with haoshiyou-admin itself.
       let groupNickName = getGroupNickNameFromContact(c);
-      if (/^(管|介|群主)-/.test(groupNickName)) {
+      if (/^(管|介|群主)-/.test(groupNickName) || /管理员/.test(c.remark())) {
+        console.log(`略过管理员 ${c.name()}, 群里叫做 ${getGroupNickNameFromContact(c)}，备注${c.remark()}`);
         // pass, never remove
       } else if (/^(招|求)租/.test(groupNickName)) {
         // good format, but need to rotate
@@ -171,6 +175,9 @@ let maybeAddToHsyGroups = async function(m:Message) {
     } else if (/旧金山|三番|San Francisco|Uber|AirBnb/.test(content)) {
       groupToAdd = "三番";
       groupType = HsyGroupEnum.SanFrancisco;
+    } else if (/西雅图/.test(content)) {
+      groupToAdd = "西雅图";
+      groupType = HsyGroupEnum.Seattle;
     } else if (/短租/.test(content)) {
       groupToAdd = "短租";
       groupType = HsyGroupEnum.ShortTerm;
