@@ -99,10 +99,12 @@ export class HsyBotLogger {
 
     let hsyListing:HsyListing = new HsyListing();
     hsyListing.ownerId = 'haoshiyou-admin';
+    hsyListing.lastUpdated = new Date();
     hsyListing.uid = 'group-collected-' + c.name();
     hsyListing.content = m.content();
     hsyListing.title = m.content().slice(0, 25);
     await HsyBotLogger.lq.setHsyListing(hsyListing);
+    console.log(`Successfully stored ${JSON.stringify(hsyListing)}`);
     await jsonfile.writeFileSync(fileListings, listing, {flag: 'a'});
   }
 }

@@ -45,7 +45,6 @@ export class LoopbackQuerier {
         .catch((err) => {
           console.log(JSON.stringify(err));
         });
-    console.log('Successfully!');
     let listings:HsyListing[] = result[0].body;
     console.log(JSON.stringify(listings));
     return result;
