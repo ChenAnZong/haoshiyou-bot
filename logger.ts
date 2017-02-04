@@ -1,10 +1,13 @@
 import {Message, Contact} from "wechaty";
 import {FriendRequest} from "wechaty/dist/src/friend-request";
+import {HsyListing} from "./loopbacksdk/models/HsyListing";
+import {LoopbackQuerier} from "./loopback-querier";
 
 const file = 'log.json';
 const fileListings = 'potential-posting.json';
 const jsonfile = require('jsonfile');
 const util = require('util');
+const uuidV4 = require('uuid/v4');
 class HsyBotLogObject {
   public type: HsyBotLoggerType;
   public contact:Contact;
@@ -48,6 +51,7 @@ export enum HsyBotLoggerType {
 }
 
 export class HsyBotLogger {
+  private static lq:LoopbackQuerier = new LoopbackQuerier();
   public static async logBotAddToGroupEvent(
       contact:Contact,
       groupEnum:HsyGroupEnum):Promise<void> {
@@ -92,8 +96,13 @@ export class HsyBotLogger {
       groupNickName: c['rawObj']['DisplayName'],
       content: m.content()
     };
-    console.log(`XXX POTENTIAL LISTING ${JSON.stringify(listing)}`);
 
+    let hsyListing:HsyListing = new HsyListing();
+    hsyListing.ownerId = 'haoshiyou-admin';
+    hsyListing.uid = 'group-collected-' + c.name();
+    hsyListing.content = m.content();
+    hsyListing.title = m.content().slice(0, 25);
+    await HsyBotLogger.lq.setHsyListing(hsyListing);
     await jsonfile.writeFileSync(fileListings, listing, {flag: 'a'});
   }
 }

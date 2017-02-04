@@ -1,7 +1,7 @@
 import {HsyListing} from "./loopbacksdk/models/HsyListing";
 const config = {
   "loopback": {
-    "http://localhost:3000": {
+    "http://haoshiyou-server-dev.herokuapp.com": {
       "__domain": {
         "auth": {
           "auth": {"bearer": "[0]"}
@@ -20,7 +20,7 @@ const promise = require('bluebird');
 const purest = require('purest')({request, promise});
 const loopback = purest({provider: 'loopback', config});
 
-class LoopbackQuerier {
+export class LoopbackQuerier {
   public async getHysListing():Promise<Object> {
     console.log('Connect to LoopBack Server');
 
@@ -37,7 +37,6 @@ class LoopbackQuerier {
   }
 
   public async setHsyListing(listing) {
-
     let req = loopback.put('HsyListings')
         .json(listing)
         .request();
@@ -63,6 +62,4 @@ class LoopbackQuerier {
     await q.setHsyListing(listing);
   }
 }
-
-LoopbackQuerier.main();
 

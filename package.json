@@ -9,6 +9,7 @@
     "purest": "^3.0.1",
     "qrcode-terminal": "^0.11.0",
     "request": "^2.79.0",
+    "uuid": "^3.0.1",
     "wechaty": "^0.7.3"
   },
   "scripts": {
