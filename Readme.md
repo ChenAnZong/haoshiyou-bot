@@ -30,7 +30,9 @@ docker run -ti --volume="$(pwd)":/bot --rm zixia/wechaty main.ts
  
 * Integration function
   - [X] Auto-detect an user is posting a listing of for rent or find home.
-  - [ ] Post to Haoshiyou-Server
+  - [ ] Append all pictures to the listing 
+  - [ ] Add information about area and type
+  - [X] Post to Haoshiyou-Server
 
 * Advance function
   - [ ] Extract time, price, type from a list post
