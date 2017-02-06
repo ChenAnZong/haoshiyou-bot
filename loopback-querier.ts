@@ -19,21 +19,23 @@ const request = require('request');
 const promise = require('bluebird');
 const purest = require('purest')({request, promise});
 const loopback = purest({provider: 'loopback', config});
-
 export class LoopbackQuerier {
-  public async getHysListing():Promise<Object> {
+  public async getHsyListingByUid(uid:string):Promise<HsyListing> {
     console.log('Connect to LoopBack Server');
-
     let req = loopback
         .get('HsyListings')
+        .qs({filter:
+            JSON.stringify({ 'where':
+              {'uid': uid}
+            })
+        })
         .request();
     let result = await req
         .catch((err) => {
           console.log(JSON.stringify(err));
         });
-    let listings:HsyListing[] = result[0].body;
-    console.log(JSON.stringify(listings));
-    return result;
+    let listing:HsyListing = result[0].body[0];
+    return listing;
   }
 
   public async setHsyListing(listing) {
@@ -50,7 +52,7 @@ export class LoopbackQuerier {
     return result;
   }
 
-  public static async main() {
+  public static async mainSet() {
     let listing = new HsyListing();
     listing.ownerId = 'some_ownerId_1';
     listing.uid = 'some_uid_1';
@@ -60,5 +62,10 @@ export class LoopbackQuerier {
     let q:LoopbackQuerier = new LoopbackQuerier();
     await q.setHsyListing(listing);
   }
-}
 
+  public static async mainGet() {
+    let q:LoopbackQuerier = new LoopbackQuerier();
+    let listing =  await q.getHsyListingByUid('group-collected-' + '周载南');
+    console.log(`got Listing = ${JSON.stringify(listing)}`);
+  }
+}

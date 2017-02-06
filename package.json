@@ -4,6 +4,7 @@
     "@types/express": "^4.0.34",
     "bluebird": "^3.4.7",
     "chromedriver": "^2.27.2",
+    "cloudinary": "^1.6.0",
     "express": "^4.14.0",
     "jsonfile": "^2.4.0",
     "purest": "^3.0.1",

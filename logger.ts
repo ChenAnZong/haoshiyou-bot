@@ -110,4 +110,29 @@ export class HsyBotLogger {
     console.log(`Successfully stored ${JSON.stringify(hsyListing)}`);
     await jsonfile.writeFileSync(fileListings, listing, {flag: 'a'});
   }
+
+  public static async logListingImage(m:Message, hsyGroupEnum:HsyGroupEnum, imagePublicId:string) {
+    let c:Contact = m.from();
+    let uid = 'group-collected-' + c.name();
+    let hsyListing:HsyListing = await HsyBotLogger.lq.getHsyListingByUid(uid);
+    if (hsyListing === undefined || hsyListing === null) {
+      // create new listing
+      hsyListing = new HsyListing();
+      hsyListing.ownerId = 'haoshiyou-admin';
+      hsyListing.lastUpdated = new Date();
+      hsyListing.uid = 'group-collected-' + c.name();
+      hsyListing.title = m.content().slice(0, 25);
+      hsyListing.hsyGroupEnum = HsyGroupEnum[hsyGroupEnum];
+      hsyListing.wechatId = m.from().weixin();
+      hsyListing.imageIds = [imagePublicId];
+    } else {
+      hsyListing.imageIds = hsyListing.imageIds.concat(imagePublicId);
+    }
+    console.log(`Updating image ${imagePublicId} for contact ${uid}`);
+    let updatedHsyListing = await HsyBotLogger.lq.setHsyListing(hsyListing);
+
+    console.log(`Done updating image ${imagePublicId} for contact ${uid}`);
+    console.log(`updatedHsyListing =   ${JSON.stringify(updatedHsyListing)}`);
+    return updatedHsyListing;
+  }
 }

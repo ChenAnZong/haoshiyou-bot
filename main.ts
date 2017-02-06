@@ -1,13 +1,25 @@
 import {Wechaty, Room, Contact, Message, FriendRequest, MsgType} from "wechaty";
 import {HsyBotLogger, HsyGroupEnum} from "./logger";
-import { createWriteStream, writeFileSync }  from 'fs'
-
+import { createWriteStream }  from 'fs';
 console.log(`--- HsyBot Starts! ---`);
 
 const bot = Wechaty.instance();
+const cloudinary = require('cloudinary');
 const newComerSize = 200;
 const groupDownSizeTarget = 465;
 const groupDownSizeTriggerThreshold = 480;
+if (process.env.CLOUDINARY_SECRET !== undefined && process.env.CLOUDINARY_SECRET.length > 0) {
+  cloudinary.config({
+    cloud_name: 'xinbenlv',
+    api_key: '999284541119412',
+    api_secret: process.env.CLOUDINARY_SECRET
+  });
+
+} else {
+  console.log('Need to specify cloudinary secret by export CLOUDINARY_SECRET="some_secret" .');
+  process.exit();
+}
+
 const hsyCannotUnderstandMsg = `小助手没听懂你说啥意思哈，回复【加群】了解怎样加入租房群。`;
 const hsyGreetingsMsg =
     `你好，谢谢你加我们群，请问你要在哪个区域找房子或者室友？\n` +
@@ -190,8 +202,8 @@ let maybeAddToHsyGroups = async function(m:Message) {
     } else if (/短租/.test(content)) {
       groupToAdd = "短租";
       groupType = HsyGroupEnum.ShortTerm;
-    } else if (/testbotgroup/.test(content)) {
-      groupToAdd = "testgroup";
+    } else if (/测试/.test(content)) {
+      groupToAdd = "测试";
       groupType = HsyGroupEnum.TestGroup;
     } else if (/老友/.test(content)) {
       groupToAdd = "老友";
@@ -228,6 +240,11 @@ let extractPostingMessage = async function(m:Message) {
   if (isTalkingToMePrivately(m) || /好室友/.test(m.room().topic())) {
     if (m.content().length >= 80 &&
         /租|rent|roomate|小区|公寓|lease/.test(m.content())) {
+      if (m.type() == MsgType.IMAGE) {
+        let publicId = await saveMediaFile(m);
+        console.log(`Uploaded image ${publicId} to cloudinary, now update the database`);
+        await HsyBotLogger.logListingImage(m, getHsyGroupEnum(m.room()), publicId);
+      } else
       HsyBotLogger.logListing(m, getHsyGroupEnum(m.room()));
     }
   }
@@ -258,19 +275,32 @@ let getHsyGroupEnum = function(room) {
   return HsyGroupEnum.None;
 };
 
-let saveMediaFile = function(message: Message):Promise<void> {
-  const filename = message.filename();
+let saveMediaFile = async function(message: Message):Promise<any> {
+  const filename = 'tmp/img/' + message.filename();
+
   console.log('IMAGE local filename: ' + filename);
-
-  const fileStream = createWriteStream('tmp/img/' + filename);
-
+  const fileStream = createWriteStream(filename);
   console.log('start to readyStream()');
-  return message.readyStream()
-      .then(stream => {
-        stream.pipe(fileStream)
-            .on('close', () => {
-              console.log('finish readyStream()')
-            })
-      })
-      .catch(e => console.log('stream error:' + e));
+  let stream = await message.readyStream();
+
+  // TODO(xinbenlv): this might cause the error of following
+  //   unhandledRejection: Error: not a media message [object Promise]
+  return new Promise( /* executor */ function(resolve, reject) {
+    stream.pipe(fileStream)
+        .on('close', () => {
+          console.log('finish readyStream()');
+            cloudinary.uploader.upload(filename, function(result, error) {
+              if (error) {
+                reject(error);
+              } else {
+                console.log(`Uploaded an image:` + JSON.stringify(result));
+                resolve(result.public_id);
+              }
+            });
+        });
+  }).then(publicId => {
+    console.log(`The publicId result is ${publicId}`);
+    return publicId;
+  });
+
 };
