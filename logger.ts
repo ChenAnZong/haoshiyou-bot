@@ -36,6 +36,7 @@ export enum HsyGroupEnum {
   ShortTerm = 6,
   OldFriends = 7,
   Seattle = 8,
+  None = -1,
 }
 
 /**
@@ -89,7 +90,7 @@ export class HsyBotLogger {
     await this.log(logItem);
   }
 
-  public static async logListing(m:Message) {
+  public static async logListing(m:Message, hsyGroupEnum:HsyGroupEnum) {
     let c:Contact = m.from();
     let listing = {
       contact: c.name(),
@@ -103,6 +104,8 @@ export class HsyBotLogger {
     hsyListing.uid = 'group-collected-' + c.name();
     hsyListing.content = m.content();
     hsyListing.title = m.content().slice(0, 25);
+    hsyListing.hsyGroupEnum = HsyGroupEnum[hsyGroupEnum];
+    hsyListing.wechatId = m.from().weixin();
     await HsyBotLogger.lq.setHsyListing(hsyListing);
     console.log(`Successfully stored ${JSON.stringify(hsyListing)}`);
     await jsonfile.writeFileSync(fileListings, listing, {flag: 'a'});

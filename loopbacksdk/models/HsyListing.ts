@@ -6,6 +6,7 @@ import {
 declare var Object: any;
 export interface HsyListingInterface {
   content?: any;
+  hsyGroupEnum?: string;
   imageIds?: Array<string>;
   lastUpdated?: Date;
   location?: GeoPoint;
@@ -14,10 +15,12 @@ export interface HsyListingInterface {
   title?: string;
   type?: number;
   uid: string;
+  wechatId?: string;
 }
 
 export class HsyListing implements HsyListingInterface {
   content: any = <any>null;
+  hsyGroupEnum: string = '';
   imageIds: Array<string> = <any>[];
   lastUpdated: Date = new Date(0);
   location: GeoPoint = <any>null;
@@ -26,6 +29,7 @@ export class HsyListing implements HsyListingInterface {
   title: string = '';
   type: number = 0;
   uid: string = '';
+  wechatId: string = '';
   constructor(data?: HsyListingInterface) {
     Object.assign(this, data);
   }
@@ -61,6 +65,10 @@ export class HsyListing implements HsyListingInterface {
           name: 'content',
           type: 'any'
         },
+        hsyGroupEnum: {
+          name: 'hsyGroupEnum',
+          type: 'string'
+        },
         imageIds: {
           name: 'imageIds',
           type: 'Array&lt;string&gt;'
@@ -91,6 +99,10 @@ export class HsyListing implements HsyListingInterface {
         },
         uid: {
           name: 'uid',
+          type: 'string'
+        },
+        wechatId: {
+          name: 'wechatId',
           type: 'string'
         },
       },

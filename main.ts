@@ -219,11 +219,32 @@ let extractPostingMessage = async function(m:Message) {
   if (isTalkingToMePrivately(m) || /好室友/.test(m.room().topic())) {
     if (m.content().length >= 80 &&
         /租|rent|roomate|小区|公寓|lease/.test(m.content())) {
-      HsyBotLogger.logListing(m);
+      HsyBotLogger.logListing(m, getHsyGroupEnum(m.room()));
     }
   }
 };
 
 let getGroupNickNameFromContact = function(c:Contact) {
   return c['rawObj']['DisplayName'];
+};
+
+let getHsyGroupEnum = function(room) {
+  let topic = room.topic();
+  if (!/好室友/.test(topic)) return HsyGroupEnum.None;
+  else if (/旧金山/.test(topic)) {
+    return HsyGroupEnum.SanFrancisco;
+  } else if (/中半岛/.test(topic)) {
+    return HsyGroupEnum.MidPeninsula;
+  } else if (/南湾西/.test(topic)) {
+    return HsyGroupEnum.SouthBayEast;
+  } else if (/南湾东/.test(topic)) {
+    return HsyGroupEnum.SouthBayEast;
+  } else if (/东湾/.test(topic)) {
+    return HsyGroupEnum.EastBay;
+  } else if (/老友/.test(topic)) {
+    return HsyGroupEnum.OldFriends;
+  } else if (/西雅图/.test(topic)) {
+    return HsyGroupEnum.Seattle;
+  }
+  return HsyGroupEnum.None;
 };
