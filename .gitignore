@@ -10,3 +10,4 @@ potential-posting.json
 .cache
 .yarnrc
 yarn.lock
+tmp

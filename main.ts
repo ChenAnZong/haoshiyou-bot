@@ -1,5 +1,6 @@
-import {Wechaty, Room, Contact, Message, FriendRequest} from "wechaty";
+import {Wechaty, Room, Contact, Message, FriendRequest, MsgType} from "wechaty";
 import {HsyBotLogger, HsyGroupEnum} from "./logger";
+import { createWriteStream, writeFileSync }  from 'fs'
 
 console.log(`--- HsyBot Starts! ---`);
 
@@ -84,7 +85,15 @@ bot
 
     .on('message', async (m) => {
       await HsyBotLogger.logRawChatMsg(m);
+      let util = require('util');
+      console.log(`${JSON.stringify(m.filename())}`);
+      console.log('XXX DEBUG msg type = ' + m.type());
+      if (m.type() == MsgType.IMAGE) {
+        console.log('XXX DEBUG detected an image');
+        await saveMediaFile(m);
 
+        console.log('XXX DEBUG saved an image');
+      }
       if (m.self()) {
         return; // Early return for talking to myself.
       }
@@ -247,4 +256,21 @@ let getHsyGroupEnum = function(room) {
     return HsyGroupEnum.Seattle;
   }
   return HsyGroupEnum.None;
+};
+
+let saveMediaFile = function(message: Message):Promise<void> {
+  const filename = message.filename();
+  console.log('IMAGE local filename: ' + filename);
+
+  const fileStream = createWriteStream('tmp/img/' + filename);
+
+  console.log('start to readyStream()');
+  return message.readyStream()
+      .then(stream => {
+        stream.pipe(fileStream)
+            .on('close', () => {
+              console.log('finish readyStream()')
+            })
+      })
+      .catch(e => console.log('stream error:' + e));
 };
