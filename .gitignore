@@ -1,5 +1,5 @@
 .idea/
-.v8flags.5.4.500.45.undefined.json
+.v8flags.*
 .vscode
 .pki
 *.js

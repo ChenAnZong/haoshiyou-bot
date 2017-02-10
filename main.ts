@@ -98,13 +98,10 @@ bot
     .on('message', async (m) => {
       await HsyBotLogger.logRawChatMsg(m);
       let util = require('util');
-      console.log(`${JSON.stringify(m.filename())}`);
-      console.log('XXX DEBUG msg type = ' + m.type());
+      console.log(`XXX got a msg type: ${m.type()}`);
       if (m.type() == MsgType.IMAGE) {
-        console.log('XXX DEBUG detected an image');
+        console.log(`${m.filename()}`);
         await saveMediaFile(m);
-
-        console.log('XXX DEBUG saved an image');
       }
       if (m.self()) {
         return; // Early return for talking to myself.
@@ -115,7 +112,7 @@ bot
 
     .init()
     .then(async _ => await HsyBotLogger.logDebug(`HsyBot is terminated`))
-    .catch(async e => await HsyBotLogger.logDebug(e));
+    .catch(e => console.error(e));
 
 let maybeDownsizeKeyRoom = async function(keyroom: Room, c:Contact) {
   if (/老友/.test(keyroom.topic())) return;
@@ -222,7 +219,6 @@ let maybeAddToHsyGroups = async function(m:Message) {
         await keyroom.add(contact);
         await contact.say(hysAlreadyAddedMsg);
         await contact.say(hsyGroupNickNameMsg);
-
       } else {
         await m.say(`囧...加群失败，请联系群主周载南(微信号:xinbenlv)。`);
         HsyBotLogger.logDebug(`Can't find group ${groupToAdd}`);
@@ -282,7 +278,7 @@ let saveMediaFile = async function(message: Message):Promise<any> {
   const fileStream = createWriteStream(filename);
   console.log('start to readyStream()');
   let stream = await message.readyStream();
-
+  console.log('passed readyStream()');
   // TODO(xinbenlv): this might cause the error of following
   //   unhandledRejection: Error: not a media message [object Promise]
   return new Promise( /* executor */ function(resolve, reject) {
@@ -291,6 +287,8 @@ let saveMediaFile = async function(message: Message):Promise<any> {
           console.log('finish readyStream()');
             cloudinary.uploader.upload(filename, function(result, error) {
               if (error) {
+                console.log(`There is an error in saveMediaFile upload of cloudinary`);
+                console.warn(error);
                 reject(error);
               } else {
                 console.log(`Uploaded an image:` + JSON.stringify(result));
@@ -299,7 +297,7 @@ let saveMediaFile = async function(message: Message):Promise<any> {
             });
         });
   }).then(publicId => {
-    console.log(`The publicId result is ${publicId}`);
+    console.log(`The PublicId result is ${publicId}`);
     return publicId;
   });
 

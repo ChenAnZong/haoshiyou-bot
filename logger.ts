@@ -119,7 +119,6 @@ export class HsyBotLogger {
       // create new listing
       hsyListing = new HsyListing();
       hsyListing.ownerId = 'haoshiyou-admin';
-      hsyListing.lastUpdated = new Date();
       hsyListing.uid = 'group-collected-' + c.name();
       hsyListing.title = m.content().slice(0, 25);
       hsyListing.hsyGroupEnum = HsyGroupEnum[hsyGroupEnum];
@@ -128,6 +127,8 @@ export class HsyBotLogger {
     } else {
       hsyListing.imageIds = hsyListing.imageIds.concat(imagePublicId);
     }
+    hsyListing.lastUpdated = new Date();
+
     console.log(`Updating image ${imagePublicId} for contact ${uid}`);
     let updatedHsyListing = await HsyBotLogger.lq.setHsyListing(hsyListing);
 
