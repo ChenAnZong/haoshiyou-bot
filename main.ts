@@ -1,8 +1,9 @@
 import {Wechaty, Room, Contact, Message, FriendRequest, MsgType} from "wechaty";
-import {HsyBotLogger, HsyGroupEnum} from "./logger";
+import {HsyBotLogger, HsyGroupEnum} from "./datastore";
 import { createWriteStream }  from 'fs';
+HsyBotLogger.logger.debug('Start! 1');
 console.log(`--- HsyBot Starts! ---`);
-
+HsyBotLogger.logger.debug('Start! 2');
 const bot = Wechaty.instance();
 const cloudinary = require('cloudinary');
 const newComerSize = 200;

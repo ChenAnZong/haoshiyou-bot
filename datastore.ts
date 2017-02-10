@@ -2,12 +2,22 @@ import {Message, Contact} from "wechaty";
 import {FriendRequest} from "wechaty/dist/src/friend-request";
 import {HsyListing} from "./loopbacksdk/models/HsyListing";
 import {LoopbackQuerier} from "./loopback-querier";
+import { Logger, LoggerConfig } from "log4ts";
+import ConsoleAppender from "log4ts/build/appenders/ConsoleAppender";
+import BasicLayout from "log4ts/build/layouts/BasicLayout";
+import {LogLevel} from "log4ts/build/LogLevel";
+
+let appender = new ConsoleAppender();
+let layout = new BasicLayout();
+appender.setLayout(layout);
+let config = new LoggerConfig(appender);
+config.setLevel(LogLevel.ALL);
+Logger.setConfig(config);
 
 const file = 'log.json';
 const fileListings = 'potential-posting.json';
 const jsonfile = require('jsonfile');
 const util = require('util');
-const uuidV4 = require('uuid/v4');
 class HsyBotLogObject {
   public type: HsyBotLoggerType;
   public contact:Contact;
@@ -53,6 +63,7 @@ export enum HsyBotLoggerType {
 
 export class HsyBotLogger {
   private static lq:LoopbackQuerier = new LoopbackQuerier();
+  public static logger = Logger.getLogger(`HsyBotLogger`);
   public static async logBotAddToGroupEvent(
       contact:Contact,
       groupEnum:HsyGroupEnum):Promise<void> {
@@ -79,7 +90,8 @@ export class HsyBotLogger {
 
   private static async log(logItem:HsyBotLogObject):Promise<void> {
     let inspectedLogItem = util.inspect(logItem);
-    if (logItem.type != HsyBotLoggerType.chatEvent) console.log(`XXX DEBUG LOG ${JSON.stringify(inspectedLogItem)}`);
+    let msg = `XXX DEBUG LOG ${JSON.stringify(inspectedLogItem)}`;
+    this.logger.debug(msg);
     await jsonfile.writeFileSync(file, inspectedLogItem, {flag: 'a'});
   }
 
@@ -107,7 +119,7 @@ export class HsyBotLogger {
     hsyListing.hsyGroupEnum = HsyGroupEnum[hsyGroupEnum];
     hsyListing.wechatId = m.from().weixin();
     await HsyBotLogger.lq.setHsyListing(hsyListing);
-    console.log(`Successfully stored ${JSON.stringify(hsyListing)}`);
+    HsyBotLogger.logger.debug(`Successfully stored ${JSON.stringify(hsyListing)}`);
     await jsonfile.writeFileSync(fileListings, listing, {flag: 'a'});
   }
 
@@ -129,11 +141,11 @@ export class HsyBotLogger {
     }
     hsyListing.lastUpdated = new Date();
 
-    console.log(`Updating image ${imagePublicId} for contact ${uid}`);
+    HsyBotLogger.logger.debug(`Updating image ${imagePublicId} for contact ${uid}`);
     let updatedHsyListing = await HsyBotLogger.lq.setHsyListing(hsyListing);
 
-    console.log(`Done updating image ${imagePublicId} for contact ${uid}`);
-    console.log(`updatedHsyListing =   ${JSON.stringify(updatedHsyListing)}`);
+    HsyBotLogger.logger.debug(`Done updating image ${imagePublicId} for contact ${uid}`);
+    HsyBotLogger.logger.debug(`updatedHsyListing =   ${JSON.stringify(updatedHsyListing)}`);
     return updatedHsyListing;
   }
 }
