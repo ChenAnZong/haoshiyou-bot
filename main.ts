@@ -97,15 +97,10 @@ bot
 
     .on('message', async (m) => {
       await HsyBotLogger.logRawChatMsg(m);
-      let util = require('util');
-      console.log(`XXX got a msg type: ${m.type()}`);
-      if (m.type() == MsgType.IMAGE) {
-        console.log(`${m.filename()}`);
-        await saveMediaFile(m);
-      }
       if (m.self()) {
         return; // Early return for talking to myself.
       }
+      console.log(`XXX got a msg type: ${m.type()}`);
       await maybeAddToHsyGroups(m);
       await extractPostingMessage(m);
     })
@@ -234,13 +229,16 @@ let isTalkingToMePrivately = function(m:Message) {
 
 let extractPostingMessage = async function(m:Message) {
   if (isTalkingToMePrivately(m) || /好室友/.test(m.room().topic())) {
-    if (m.content().length >= 80 &&
-        /租|rent|roomate|小区|公寓|lease/.test(m.content())) {
-      if (m.type() == MsgType.IMAGE) {
-        let publicId = await saveMediaFile(m);
-        console.log(`Uploaded image ${publicId} to cloudinary, now update the database`);
-        await HsyBotLogger.logListingImage(m, getHsyGroupEnum(m.room()), publicId);
-      } else
+    if (m.type() == MsgType.IMAGE) {
+      console.log(`${m.from().name()} sent an image.`);
+      let publicId = await saveMediaFile(m);
+      console.log(
+          `Uploaded image ${publicId} to cloudinary, now update the database, in group` +
+          `${getHsyGroupEnum(m.room())}`);
+      await HsyBotLogger.logListingImage(m, getHsyGroupEnum(m.room()), publicId);
+    } else if (m.content().length >= 80 &&
+      /租|rent|roomate|小区|公寓|lease/.test(m.content())) {
+      console.log(`${m.from().name()} say: ${m.content()}`);
       HsyBotLogger.logListing(m, getHsyGroupEnum(m.room()));
     }
   }
