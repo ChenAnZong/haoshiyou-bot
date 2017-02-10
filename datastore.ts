@@ -3,16 +3,6 @@ import {FriendRequest} from "wechaty/dist/src/friend-request";
 import {HsyListing} from "./loopbacksdk/models/HsyListing";
 import {LoopbackQuerier} from "./loopback-querier";
 import { Logger, LoggerConfig } from "log4ts";
-import ConsoleAppender from "log4ts/build/appenders/ConsoleAppender";
-import BasicLayout from "log4ts/build/layouts/BasicLayout";
-import {LogLevel} from "log4ts/build/LogLevel";
-
-let appender = new ConsoleAppender();
-let layout = new BasicLayout();
-appender.setLayout(layout);
-let config = new LoggerConfig(appender);
-config.setLevel(LogLevel.ALL);
-Logger.setConfig(config);
 
 const file = 'log.json';
 const fileListings = 'potential-posting.json';
@@ -90,7 +80,7 @@ export class HsyBotLogger {
 
   private static async log(logItem:HsyBotLogObject):Promise<void> {
     let inspectedLogItem = util.inspect(logItem);
-    let msg = `XXX DEBUG LOG ${JSON.stringify(inspectedLogItem)}`;
+    let msg = `${JSON.stringify(inspectedLogItem)}`;
     this.logger.debug(msg);
     await jsonfile.writeFileSync(file, inspectedLogItem, {flag: 'a'});
   }

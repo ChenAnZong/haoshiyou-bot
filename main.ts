@@ -1,14 +1,25 @@
 import {Wechaty, Room, Contact, Message, FriendRequest, MsgType} from "wechaty";
 import {HsyBotLogger, HsyGroupEnum} from "./datastore";
 import { createWriteStream }  from 'fs';
-HsyBotLogger.logger.debug('Start! 1');
-console.log(`--- HsyBot Starts! ---`);
-HsyBotLogger.logger.debug('Start! 2');
+import { Logger, LoggerConfig } from "log4ts";
+import ConsoleAppender from "log4ts/build/appenders/ConsoleAppender";
+import BasicLayout from "log4ts/build/layouts/BasicLayout";
+import {LogLevel} from "log4ts/build/LogLevel";
+
 const bot = Wechaty.instance();
 const cloudinary = require('cloudinary');
 const newComerSize = 200;
 const groupDownSizeTarget = 465;
 const groupDownSizeTriggerThreshold = 480;
+let appender = new ConsoleAppender();
+let layout = new BasicLayout();
+appender.setLayout(layout);
+let config = new LoggerConfig(appender);
+config.setLevel(LogLevel.INFO);
+Logger.setConfig(config);
+
+
+const logger = Logger.getLogger(`main`);
 if (process.env.CLOUDINARY_SECRET !== undefined && process.env.CLOUDINARY_SECRET.length > 0) {
   cloudinary.config({
     cloud_name: 'xinbenlv',
@@ -17,7 +28,7 @@ if (process.env.CLOUDINARY_SECRET !== undefined && process.env.CLOUDINARY_SECRET
   });
 
 } else {
-  console.log('Need to specify cloudinary secret by export CLOUDINARY_SECRET="some_secret" .');
+  logger.error('Need to specify cloudinary secret by export CLOUDINARY_SECRET="some_secret" .');
   process.exit();
 }
 
@@ -79,11 +90,11 @@ bot
     })
 
     .on('login', async user => {
-      await HsyBotLogger.logDebug(`${user} logged in`);
+      await logger.info(`${user} logged in`);
     })
 
     .on('logout', async user => {
-      await HsyBotLogger.logDebug(`${user} logged out.`);
+      await logger.info(`${user} logged out.`);
     })
 
     .on('friend', async (contact, request:FriendRequest) => {
@@ -92,7 +103,7 @@ bot
         await request.accept();
         await contact.say(hsyGreetingsMsg);
       } else {        // 2. confirm friend ship
-        await HsyBotLogger.logDebug('new friend ship confirmed with ' + contact);
+        await logger.info('new friend ship confirmed with ' + contact);
       }
     })
 
@@ -101,14 +112,14 @@ bot
       if (m.self()) {
         return; // Early return for talking to myself.
       }
-      console.log(`XXX got a msg type: ${m.type()}`);
+      logger.debug(`Got a msg type: ${m.type()}`);
       await maybeAddToHsyGroups(m);
       await extractPostingMessage(m);
     })
 
     .init()
-    .then(async _ => await HsyBotLogger.logDebug(`HsyBot is terminated`))
-    .catch(e => console.error(e));
+    .then(async _ => await logger.info(`HsyBot is terminated`))
+    .catch(e => logger.error(e));
 
 let maybeDownsizeKeyRoom = async function(keyroom: Room, c:Contact) {
   if (/老友/.test(keyroom.topic())) return;
@@ -124,7 +135,7 @@ let maybeDownsizeKeyRoom = async function(keyroom: Room, c:Contact) {
       if (c.self()) continue; // never does anything with haoshiyou-admin itself.
       let groupNickName = getGroupNickNameFromContact(c);
       if (/^(管|介|群主)-/.test(groupNickName) || /管理员/.test(c.remark())) {
-        console.log(`略过管理员 ${c.name()}, 群里叫做 ${getGroupNickNameFromContact(c)}，备注${c.remark()}`);
+        logger.info(`略过管理员 ${c.name()}, 群里叫做 ${getGroupNickNameFromContact(c)}，备注${c.remark()}`);
         // pass, never remove
       } else if (/^(招|求)租/.test(groupNickName)) {
         // good format, but need to rotate
@@ -157,7 +168,7 @@ let maybeDownsizeKeyRoom = async function(keyroom: Room, c:Contact) {
       await keyroom.del(c);
     }));
   } else {
-    console.log(`Group Size of ${keyroom.topic()} is ` +
+    logger.info(`Group Size of ${keyroom.topic()} is ` +
         `still good (${keyroom.memberList().length}).`)
   }
 };
@@ -169,7 +180,7 @@ let maybeAddToHsyGroups = async function(m:Message) {
   let groupType:HsyGroupEnum;
   // only to me or entry group
   if (isTalkingToMePrivately(m) || /好室友.*入口群/.test(m.room().topic())) {
-    HsyBotLogger.logDebug('Talking to 好室友 admin');
+    logger.debug('Talking to 好室友 admin');
     let groupToAdd = null;
     if (/加群/.test(content)) {
       await m.say(hsyGreetingsMsg);
@@ -205,7 +216,7 @@ let maybeAddToHsyGroups = async function(m:Message) {
     if (groupToAdd == null) { // found no valid group
       await m.say(hsyCannotUnderstandMsg);
     } else {
-      await HsyBotLogger.logDebug(`Start to add ${contact} to room ${groupToAdd}.`);
+      await logger.info(`Start to add ${contact} to room ${groupToAdd}.`);
       await HsyBotLogger.logBotAddToGroupEvent(contact, groupType);
       await m.say(`好的，你要加${groupToAdd}的群对吧，我这就拉你进群。`);
       let typeRegEx = new RegExp(`好室友.*` + groupToAdd);
@@ -217,7 +228,7 @@ let maybeAddToHsyGroups = async function(m:Message) {
         await contact.say(hsyGroupNickNameMsg);
       } else {
         await m.say(`囧...加群失败，请联系群主周载南(微信号:xinbenlv)。`);
-        HsyBotLogger.logDebug(`Can't find group ${groupToAdd}`);
+        logger.info(`Can't find group ${groupToAdd}`);
       }
     }
   }
@@ -231,16 +242,18 @@ let isTalkingToMePrivately = function(m:Message) {
 let extractPostingMessage = async function(m:Message) {
   if (isTalkingToMePrivately(m) || /好室友/.test(m.room().topic())) {
     if (m.type() == MsgType.IMAGE) {
-      console.log(`${m.from().name()} sent an image.`);
+      logger.info(`${m.from().name()} sent an image.`);
       let publicId = await saveMediaFile(m);
-      console.log(
+      logger.info(
           `Uploaded image ${publicId} to cloudinary, now update the database, in group` +
           `${getHsyGroupEnum(m.room())}`);
       await HsyBotLogger.logListingImage(m, getHsyGroupEnum(m.room()), publicId);
-    } else if (m.content().length >= 80 &&
-      /租|rent|roomate|小区|公寓|lease/.test(m.content())) {
-      console.log(`${m.from().name()} say: ${m.content()}`);
-      HsyBotLogger.logListing(m, getHsyGroupEnum(m.room()));
+    } else {
+      logger.info(`${m.from().name()} say: ${m.content()}`);
+      if (m.content().length >= 80 &&
+          /租|rent|roomate|小区|公寓|lease/.test(m.content())) {
+        HsyBotLogger.logListing(m, getHsyGroupEnum(m.room()));
+      }
     }
   }
 };
@@ -273,30 +286,28 @@ let getHsyGroupEnum = function(room) {
 let saveMediaFile = async function(message: Message):Promise<any> {
   const filename = 'tmp/img/' + message.filename();
 
-  console.log('IMAGE local filename: ' + filename);
+  logger.debug('IMAGE local filename: ' + filename);
   const fileStream = createWriteStream(filename);
-  console.log('start to readyStream()');
   let stream = await message.readyStream();
-  console.log('passed readyStream()');
   // TODO(xinbenlv): this might cause the error of following
   //   unhandledRejection: Error: not a media message [object Promise]
   return new Promise( /* executor */ function(resolve, reject) {
     stream.pipe(fileStream)
         .on('close', () => {
-          console.log('finish readyStream()');
+          logger.verbose('finish readyStream()');
             cloudinary.uploader.upload(filename, function(result, error) {
               if (error) {
-                console.log(`There is an error in saveMediaFile upload of cloudinary`);
-                console.warn(error);
+                logger.warn(`There is an error in saveMediaFile upload of cloudinary`);
+                logger.warn(error);
                 reject(error);
               } else {
-                console.log(`Uploaded an image:` + JSON.stringify(result));
+                logger.info(`Uploaded an image:` + JSON.stringify(result));
                 resolve(result.public_id);
               }
             });
         });
   }).then(publicId => {
-    console.log(`The PublicId result is ${publicId}`);
+    logger.debug(`The PublicId result is ${publicId}`);
     return publicId;
   });
 
