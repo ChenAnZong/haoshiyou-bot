@@ -3,6 +3,7 @@ import {FriendRequest} from "wechaty/dist/src/friend-request";
 import {HsyListing} from "./loopbacksdk/models/HsyListing";
 import {LoopbackQuerier} from "./loopback-querier";
 import { Logger, LoggerConfig } from "log4ts";
+import {HsyUtil} from "./hsy-util";
 
 const file = 'log.json';
 const fileListings = 'potential-posting.json';
@@ -101,9 +102,9 @@ export class HsyBotLogger {
     };
 
     let hsyListing:HsyListing = new HsyListing();
-    hsyListing.ownerId = 'haoshiyou-admin';
+    hsyListing.ownerId = HsyUtil.getUserIdFromName(c.name());
     hsyListing.lastUpdated = new Date();
-    hsyListing.uid = 'group-collected-' + c.name();
+    hsyListing.uid = HsyUtil.getUserIdFromName(c.name());
     hsyListing.content = m.content();
     hsyListing.title = m.content().slice(0, 25);
     hsyListing.hsyGroupEnum = HsyGroupEnum[hsyGroupEnum];
@@ -115,13 +116,13 @@ export class HsyBotLogger {
 
   public static async logListingImage(m:Message, hsyGroupEnum:HsyGroupEnum, imagePublicId:string) {
     let c:Contact = m.from();
-    let uid = 'group-collected-' + c.name();
+    let uid = HsyUtil.getUserIdFromName(c.name());
     let hsyListing:HsyListing = await HsyBotLogger.lq.getHsyListingByUid(uid);
     if (hsyListing === undefined || hsyListing === null) {
       // create new listing
       hsyListing = new HsyListing();
-      hsyListing.ownerId = 'haoshiyou-admin';
-      hsyListing.uid = 'group-collected-' + c.name();
+      hsyListing.ownerId = HsyUtil.getUserIdFromName(c.name());
+      hsyListing.uid = uid;
       hsyListing.title = m.content().slice(0, 25);
       hsyListing.hsyGroupEnum = HsyGroupEnum[hsyGroupEnum];
       hsyListing.wechatId = m.from().weixin();

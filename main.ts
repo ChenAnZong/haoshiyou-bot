@@ -5,6 +5,9 @@ import { Logger, LoggerConfig } from "log4ts";
 import ConsoleAppender from "log4ts/build/appenders/ConsoleAppender";
 import BasicLayout from "log4ts/build/layouts/BasicLayout";
 import {LogLevel} from "log4ts/build/LogLevel";
+import {LoopbackQuerier} from "./loopback-querier";
+import {HsyUser} from "./loopbacksdk/models/HsyUser";
+import {HsyUtil} from "./hsy-util";
 
 const bot = Wechaty.instance();
 const cloudinary = require('cloudinary');
@@ -15,7 +18,7 @@ let appender = new ConsoleAppender();
 let layout = new BasicLayout();
 appender.setLayout(layout);
 let config = new LoggerConfig(appender);
-config.setLevel(LogLevel.INFO);
+config.setLevel(LogLevel.ALL);
 Logger.setConfig(config);
 
 
@@ -180,7 +183,9 @@ let maybeAddToHsyGroups = async function(m:Message) {
   let groupType:HsyGroupEnum;
   // only to me or entry group
   if (isTalkingToMePrivately(m) || /好室友.*入口群/.test(m.room().topic())) {
-    logger.debug('Talking to 好室友 admin');
+    logger.debug(`${contact.name()}(weixin:${contact.weixin()}) sent a message ` +
+        `type: ${m.type()} ` +
+        `content: ${m.content()}`);
     let groupToAdd = null;
     if (/加群/.test(content)) {
       await m.say(hsyGreetingsMsg);
@@ -241,9 +246,10 @@ let isTalkingToMePrivately = function(m:Message) {
 
 let extractPostingMessage = async function(m:Message) {
   if (isTalkingToMePrivately(m) || /好室友/.test(m.room().topic())) {
+    let userId = maybeCreateUser(m);
     if (m.type() == MsgType.IMAGE) {
       logger.info(`${m.from().name()} sent an image.`);
-      let publicId = await saveMediaFile(m);
+      let publicId = await saveImgFileFromMsg(m);
       logger.info(
           `Uploaded image ${publicId} to cloudinary, now update the database, in group` +
           `${getHsyGroupEnum(m.room())}`);
@@ -282,33 +288,62 @@ let getHsyGroupEnum = function(room) {
   }
   return HsyGroupEnum.None;
 };
-
-let saveMediaFile = async function(message: Message):Promise<any> {
-  const filename = 'tmp/img/' + message.filename();
-
+let savePic = async function(filename:string, picStream:NodeJS.ReadableStream):Promise<string> {
   logger.debug('IMAGE local filename: ' + filename);
   const fileStream = createWriteStream(filename);
-  let stream = await message.readyStream();
+  let stream = await picStream;
   // TODO(xinbenlv): this might cause the error of following
   //   unhandledRejection: Error: not a media message [object Promise]
-  return new Promise( /* executor */ function(resolve, reject) {
+  return new Promise<string>( /* executor */ function(resolve, reject) {
     stream.pipe(fileStream)
         .on('close', () => {
           logger.debug('finish readyStream()');
-            cloudinary.uploader.upload(filename, function(result, error) {
-              if (error) {
-                logger.warn(`There is an error in saveMediaFile upload of cloudinary`);
-                logger.warn(error);
-                reject(error);
-              } else {
-                logger.info(`Uploaded an image:` + JSON.stringify(result));
-                resolve(result.public_id);
-              }
-            });
+          cloudinary.uploader.upload(filename, function(result, error) {
+            if (error) {
+              logger.warn(`There is an error in saveMediaFile upload of cloudinary`);
+              logger.warn(error);
+              reject(error);
+            } else {
+              logger.info(`Uploaded an image:` + JSON.stringify(result));
+              resolve(result.public_id);
+            }
+          });
         });
   }).then(publicId => {
     logger.debug(`The PublicId result is ${publicId}`);
     return publicId;
   });
+};
+let saveImgFileFromMsg = async function(message: Message):Promise<any> {
+  const filename = 'tmp/img/' + message.filename();
+  return await savePic(filename, await message.readyStream());
+};
 
+
+let maybeCreateUser = async function(m:Message):Promise<string/*userId*/> {
+  logger.debug(`Maybe create an user`);
+  let c = m.from();
+  let uid = HsyUtil.getUserIdFromName(c.name());
+  let q = new LoopbackQuerier();
+  let user = await q.getHsyUserByUid(uid);
+  if (!c.weixin()) {
+    c = await c.refresh();
+  }
+  logger.debug(`Got user of uid:${uid}: ${JSON.stringify(user)}`);
+  if (user === null || user === undefined) {
+    user = new HsyUser();
+    user.id = uid;
+    user.name = c.name();
+    user.created = new Date();
+    user.weixin = c.weixin();
+    logger.debug(`User of uid:${uid} does not exist, creating a user...`);
+  } else {
+    logger.debug(`User of uid:${uid} already existed`);
+  }
+  // TODO(zzn): avatar is currently empty file
+  // user.avatarId = await savePic('tmp/img/' + c.name() + '.jpg', await c.avatar());
+  user.lastUpdated = new Date();
+  await q.setHsyUser(user);
+  logger.debug(`User of uid:${uid} created/updated: ${JSON.stringify(user)}`);
+  return uid;
 };
