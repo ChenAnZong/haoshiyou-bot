@@ -294,7 +294,7 @@ let saveMediaFile = async function(message: Message):Promise<any> {
   return new Promise( /* executor */ function(resolve, reject) {
     stream.pipe(fileStream)
         .on('close', () => {
-          logger.verbose('finish readyStream()');
+          logger.debug('finish readyStream()');
             cloudinary.uploader.upload(filename, function(result, error) {
               if (error) {
                 logger.warn(`There is an error in saveMediaFile upload of cloudinary`);
