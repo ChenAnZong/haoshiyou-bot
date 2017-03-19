@@ -43,6 +43,16 @@ export enum HsyGroupEnum {
 /**
  * Please never reuse enum ids, since things here goes into logs.
  *
+ * NextId = 2;
+ */
+export enum HsyListingTypeEnum {
+  NeedRoommate = 0,
+  NeedRoom = 1,
+}
+
+/**
+ * Please never reuse enum ids, since things here goes into logs.
+ *
  * NextId = 5;
  */
 export enum HsyBotLoggerType {
@@ -106,6 +116,9 @@ export class HsyBotLogger {
     hsyListing.lastUpdated = new Date();
     hsyListing.uid = HsyUtil.getUserIdFromName(c.name());
     hsyListing.content = m.content();
+    hsyListing.listingTypeEnum = HsyListingTypeEnum[
+        /求/.test(m.content()) ? HsyListingTypeEnum.NeedRoom : HsyListingTypeEnum.NeedRoommate
+    ];
     hsyListing.title = m.content().slice(0, 25);
     hsyListing.hsyGroupEnum = HsyGroupEnum[hsyGroupEnum];
     hsyListing.wechatId = m.from().weixin();
@@ -123,6 +136,7 @@ export class HsyBotLogger {
       hsyListing = new HsyListing();
       hsyListing.ownerId = HsyUtil.getUserIdFromName(c.name());
       hsyListing.uid = uid;
+      hsyListing.listingTypeEnum = HsyListingTypeEnum[HsyListingTypeEnum.NeedRoommate];
       hsyListing.title = m.content().slice(0, 25);
       hsyListing.hsyGroupEnum = HsyGroupEnum[hsyGroupEnum];
       hsyListing.wechatId = m.from().weixin();

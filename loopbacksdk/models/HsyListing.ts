@@ -16,6 +16,7 @@ export interface HsyListingInterface {
   type?: number;
   uid: string;
   wechatId?: string;
+  listingTypeEnum?: string;
 }
 
 export class HsyListing implements HsyListingInterface {
@@ -30,6 +31,7 @@ export class HsyListing implements HsyListingInterface {
   type: number = 0;
   uid: string = '';
   wechatId: string = '';
+  listingTypeEnum: string = '';
   constructor(data?: HsyListingInterface) {
     Object.assign(this, data);
   }
@@ -103,6 +105,10 @@ export class HsyListing implements HsyListingInterface {
         },
         wechatId: {
           name: 'wechatId',
+          type: 'string'
+        },
+        listingTypeEnum: {
+          name: 'listingTypeEnum',
           type: 'string'
         },
       },
