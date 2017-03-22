@@ -49,4 +49,5 @@ Or http://haoshiyou-server-dev.herokuapp.com/api/HsyListings?filter={%22where%22
   - [ ] Post to Haoshiyou-Server with extracted information, and create account.
 
 * Management Function
-  - [ ] Kick a group member if received kicking instruction from a group admin
+  - [X] Kick a group member if received kicking instruction from a group and add blacklist
+  - [X] Honor black list in the remarks
