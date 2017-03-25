@@ -9,5 +9,7 @@ log.json
 potential-posting.json
 .cache
 .yarnrc
+.yarn
+.config
 yarn.lock
 tmp

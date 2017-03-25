@@ -51,3 +51,8 @@ Or http://haoshiyou-server-dev.herokuapp.com/api/HsyListings?filter={%22where%22
 * Management Function
   - [X] Kick a group member if received kicking instruction from a group and add blacklist
   - [X] Honor black list in the remarks
+
+* Productivity
+  - [ ] Hot reload typescript
+  - [ ] Refactor the code to split each event handler into a separate file
+
