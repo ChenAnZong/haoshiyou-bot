@@ -3,13 +3,11 @@ import {HsyBotLogger, HsyGroupEnum} from "../datastore";
 import { createWriteStream }  from 'fs';
 import { Logger, LoggerConfig } from "log4ts";
 import {LoopbackQuerier} from "../loopback-querier";
-import {HsyUser} from "../loopbacksdk/models/HsyUser";
+import {HsyUser} from "../../loopbacksdk/models/HsyUser";
 import {HsyUtil} from "../hsy-util";
 
 const cloudinary = require('cloudinary');
-
 const logger = Logger.getLogger(`main`);
-
 const newComerSize = 200;
 const groupDownSizeTarget = 465;
 const groupDownSizeTriggerThreshold = 480;
@@ -32,7 +30,6 @@ if (process.env.CLOUDINARY_SECRET !== undefined && process.env.CLOUDINARY_SECRET
 }
 
 exports = module.exports = async function onMessage(m) {
-  console.log(`XXX 哎呀哎呀`);
   await HsyBotLogger.logRawChatMsg(m);
 
   if (m.self()) {
@@ -48,7 +45,7 @@ exports = module.exports = async function onMessage(m) {
   await maybeBlacklistUser(m) || // if true stops further processing
   await maybeAddToHsyGroups(m) || // if true stops further processing
   await maybeExtractPostingMessage(m);
-}
+};
 
 let findMemberFromGroup = function(room:Room, regExp:RegExp):Array<Contact> {
   return room.memberList().filter(c => {
@@ -56,82 +53,6 @@ let findMemberFromGroup = function(room:Room, regExp:RegExp):Array<Contact> {
         || regExp.test(getGroupNickNameFromContact(c));
   });
 };
-
-
-let maybeAddToHsyGroups = async function(m:Message):Promise<Boolean> {
-  const contact = m.from();
-  const content = m.content();
-  const room = m.room();
-  let groupType:HsyGroupEnum;
-  // only to me or entry group
-  if (isTalkingToMePrivately(m) || /好室友.*入口群/.test(m.room().topic())) {
-
-    logger.debug(`${contact.name()}(weixin:${contact.weixin()}) sent a message ` +
-        `type: ${m.type()} ` +
-        `content: ${m.content()}`);
-    let groupToAdd = null;
-    if (/加群/.test(content)) {
-      await m.say(greetingsMsg);
-      return;
-    } else if (/南湾西|Mountain View|mtv|sv|Sunnyvale|Palo Alto|Stanford|Facebook|Google|Menlo Park/.test(content)) {
-      groupToAdd = "南湾西";
-      groupType = HsyGroupEnum.SouthBayEast;
-    } else if (/南湾东|Milpitas|San Jose|Santa Clara|SJ|Campbell|Los Gatos/.test(content)) {
-      groupToAdd = "南湾东";
-      groupType = HsyGroupEnum.SouthBayWest;
-    } else if (/东湾|奥克兰|伯克利|Berkeley|Fremont|Hayward|Newark/.test(content)) {
-      groupToAdd = "东湾";
-      groupType = HsyGroupEnum.EastBay;
-    } else if (/(中)半岛|Redwood|San Carlos|San Mateo|Burlingame|Millbrae|San Bruno/.test(content)) {
-      groupToAdd = "中半岛";
-      groupType = HsyGroupEnum.MidPeninsula;
-    } else if (/旧金山|三番|San Francisco|Uber|AirBnb/.test(content)) {
-      groupToAdd = "三番";
-      groupType = HsyGroupEnum.SanFrancisco;
-    } else if (/西雅图/.test(content)) {
-      groupToAdd = "西雅图";
-      groupType = HsyGroupEnum.Seattle;
-    } else if (/短租/.test(content)) {
-      groupToAdd = "短租";
-      groupType = HsyGroupEnum.ShortTerm;
-    } else if (/测试/.test(content)) {
-      groupToAdd = "测试";
-      groupType = HsyGroupEnum.TestGroup;
-    } else if (/老友/.test(content)) {
-      groupToAdd = "老友";
-      groupType = HsyGroupEnum.OldFriends;
-    }
-    if (groupToAdd == null) { // found no valid group
-      await m.say(hsyCannotUnderstandMsg);
-    } else {
-      await logger.info(`Start to add ${contact} to room ${groupToAdd}.`);
-      await HsyBotLogger.logBotAddToGroupEvent(contact, groupType);
-      await m.say(`好的，你要加${groupToAdd}的群对吧，我这就拉你进群。`);
-      if (isBlacklisted(m.from())) {
-        logger.info(`黑名单用户 ${contactToStringLong(m.from())}申请加入${groupToAdd}`);
-        await m.say(`我找找啊`);
-        await m.say(`不好意思，这个群暂时满了，我清理一下请稍等...`);
-        let teamRoom = await findRoomByKey("大军团");
-        teamRoom.say(`黑名单用户 ${contactToStringLong(m.from())}申请加入${groupToAdd}, 我已经把他忽悠了。`);
-        return; // early exit
-      }
-      let typeRegEx = new RegExp(`好室友.*` + groupToAdd);
-      let keyroom = await Room.find({topic: typeRegEx});
-      if (keyroom) {
-        await maybeDownsizeKeyRoom(keyroom, contact);
-        await keyroom.add(contact);
-        await contact.say(hysAlreadyAddedMsg);
-        await contact.say(hsyGroupNickNameMsg);
-      } else {
-        await m.say(`囧...加群失败，请联系群主周载南(微信号:xinbenlv)。`);
-        logger.info(`Can't find group ${groupToAdd}`);
-      }
-    }
-    return true;
-  }
-  return false;
-};
-
 let isBlacklisted = function(c:Contact) {
   return /#黑名单$/.test(c.remark());
 };
@@ -141,39 +62,12 @@ let isAdmin = function(c:Contact) {
 let isTalkingToMePrivately = function(m:Message) {
   return m.rawObj['MMIsChatRoom'] == false;
 };
-
-/**
- * @returns {Promise<boolean>} true if the message is processed (and should not be processed anymore)
- */
-let maybeExtractPostingMessage = async function(m:Message):Promise<Boolean> {
-  if (isTalkingToMePrivately(m) || /好室友/.test(m.room().topic())) {
-    let userId = maybeCreateUser(m);
-    if (m.type() == MsgType.IMAGE) {
-      logger.info(`${m.from().name()} sent an image.`);
-      let publicId = await saveImgFileFromMsg(m);
-      logger.info(
-          `Uploaded image ${publicId} to cloudinary, now update the database, in group` +
-          `${getHsyGroupEnum(m.room())}`);
-      await HsyBotLogger.logListingImage(m, getHsyGroupEnum(m.room()), publicId);
-    } else {
-      logger.info(`${m.from().name()} say: ${m.content()}`);
-      if (m.content().length >= 80 &&
-          /租|rent|roomate|小区|公寓|lease/.test(m.content())) {
-        HsyBotLogger.logListing(m, getHsyGroupEnum(m.room()));
-      }
-    }
-    return true;
-  }
-};
-
-let getGroupNickNameFromContact = function(c:Contact) {
-  return c['rawObj']['DisplayName'];
-};
-
 let contactToStringLong = function(c:Contact):string {
   return `昵称:${c.name()}, 备注:${c.remark()}, 群昵称: ${getGroupNickNameFromContact(c)}`;
 };
-
+let getGroupNickNameFromContact = function(c:Contact) {
+  return c['rawObj']['DisplayName'];
+};
 let getHsyGroupEnum = function(room) {
   let topic = room.topic();
   if (!/好室友/.test(topic)) return HsyGroupEnum.None;
@@ -224,36 +118,6 @@ let saveImgFileFromMsg = async function(message: Message):Promise<any> {
   const filename = 'tmp/img/' + message.filename();
   return await savePic(filename, await message.readyStream());
 };
-
-
-let maybeCreateUser = async function(m:Message):Promise<string/*userId*/> {
-  logger.debug(`Maybe create an user`);
-  let c = m.from();
-  let uid = HsyUtil.getUserIdFromName(c.name());
-  let q = new LoopbackQuerier();
-  let user = await q.getHsyUserByUid(uid);
-  if (!c.weixin()) {
-    c = await c.refresh();
-  }
-  logger.debug(`Got user of uid:${uid}: ${JSON.stringify(user)}`);
-  if (user === null || user === undefined) {
-    user = new HsyUser();
-    user.id = uid;
-    user.name = c.name();
-    user.created = new Date();
-    user.weixin = c.weixin();
-    logger.debug(`User of uid:${uid} does not exist, creating a user...`);
-  } else {
-    logger.debug(`User of uid:${uid} already existed`);
-  }
-  // TODO(zzn): avatar is currently empty file
-  // user.avatarId = await savePic('tmp/img/' + c.name() + '.jpg', await c.avatar());
-  user.lastUpdated = new Date();
-  await q.setHsyUser(user);
-  logger.debug(`User of uid:${uid} created/updated: ${JSON.stringify(user)}`);
-  return uid;
-};
-
 let findRoomByKey = async function(key:string):Promise<Room> {
   let typeRegEx = new RegExp("【好室友】" + key);
   return await Room.find({topic: typeRegEx});
@@ -348,6 +212,29 @@ let maybeBlacklistUser = async function(m: Message):Promise<Boolean> {
   return false;
 };
 
+/**
+ * @returns {Promise<boolean>} true if the message is processed (and should not be processed anymore)
+ */
+let maybeExtractPostingMessage = async function(m:Message):Promise<Boolean> {
+  if (isTalkingToMePrivately(m) || /好室友/.test(m.room().topic())) {
+    let userId = maybeCreateUser(m);
+    if (m.type() == MsgType.IMAGE) {
+      logger.info(`${m.from().name()} sent an image.`);
+      let publicId = await saveImgFileFromMsg(m);
+      logger.info(
+          `Uploaded image ${publicId} to cloudinary, now update the database, in group` +
+          `${getHsyGroupEnum(m.room())}`);
+      await HsyBotLogger.logListingImage(m, getHsyGroupEnum(m.room()), publicId);
+    } else {
+      logger.info(`${m.from().name()} say: ${m.content()}`);
+      if (m.content().length >= 80 &&
+          /租|rent|roomate|小区|公寓|lease/.test(m.content())) {
+        HsyBotLogger.logListing(m, getHsyGroupEnum(m.room()));
+      }
+    }
+    return true;
+  }
+};
 
 let maybeDownsizeKeyRoom = async function(keyroom: Room, c:Contact) {
   if (/老友/.test(keyroom.topic())) return;
@@ -399,4 +286,106 @@ let maybeDownsizeKeyRoom = async function(keyroom: Room, c:Contact) {
     logger.info(`Group Size of ${keyroom.topic()} is ` +
         `still good (${keyroom.memberList().length}).`)
   }
+};
+
+let maybeAddToHsyGroups = async function(m:Message):Promise<Boolean> {
+  const contact = m.from();
+  const content = m.content();
+  const room = m.room();
+  let groupType:HsyGroupEnum;
+  // only to me or entry group
+  if (isTalkingToMePrivately(m) || /好室友.*入口群/.test(m.room().topic())) {
+
+    logger.debug(`${contact.name()}(weixin:${contact.weixin()}) sent a message ` +
+        `type: ${m.type()} ` +
+        `content: ${m.content()}`);
+    let groupToAdd = null;
+    if (/加群/.test(content)) {
+      await m.say(greetingsMsg);
+      return;
+    } else if (/南湾西|Mountain View|mtv|sv|Sunnyvale|Palo Alto|Stanford|Facebook|Google|Menlo Park/.test(content)) {
+      groupToAdd = "南湾西";
+      groupType = HsyGroupEnum.SouthBayEast;
+    } else if (/南湾东|Milpitas|San Jose|Santa Clara|SJ|Campbell|Los Gatos/.test(content)) {
+      groupToAdd = "南湾东";
+      groupType = HsyGroupEnum.SouthBayWest;
+    } else if (/东湾|奥克兰|伯克利|Berkeley|Fremont|Hayward|Newark/.test(content)) {
+      groupToAdd = "东湾";
+      groupType = HsyGroupEnum.EastBay;
+    } else if (/(中)半岛|Redwood|San Carlos|San Mateo|Burlingame|Millbrae|San Bruno/.test(content)) {
+      groupToAdd = "中半岛";
+      groupType = HsyGroupEnum.MidPeninsula;
+    } else if (/旧金山|三番|San Francisco|Uber|AirBnb/.test(content)) {
+      groupToAdd = "三番";
+      groupType = HsyGroupEnum.SanFrancisco;
+    } else if (/西雅图/.test(content)) {
+      groupToAdd = "西雅图";
+      groupType = HsyGroupEnum.Seattle;
+    } else if (/短租/.test(content)) {
+      groupToAdd = "短租";
+      groupType = HsyGroupEnum.ShortTerm;
+    } else if (/测试/.test(content)) {
+      groupToAdd = "测试";
+      groupType = HsyGroupEnum.TestGroup;
+    } else if (/老友/.test(content)) {
+      groupToAdd = "老友";
+      groupType = HsyGroupEnum.OldFriends;
+    }
+    if (groupToAdd == null) { // found no valid group
+      await m.say(hsyCannotUnderstandMsg);
+    } else {
+      await logger.info(`Start to add ${contact} to room ${groupToAdd}.`);
+      await HsyBotLogger.logBotAddToGroupEvent(contact, groupType);
+      await m.say(`好的，你要加${groupToAdd}的群对吧，我这就拉你进群。`);
+      if (isBlacklisted(m.from())) {
+        logger.info(`黑名单用户 ${contactToStringLong(m.from())}申请加入${groupToAdd}`);
+        await m.say(`我找找啊`);
+        await m.say(`不好意思，这个群暂时满了，我清理一下请稍等...`);
+        let teamRoom = await findRoomByKey("大军团");
+        teamRoom.say(`黑名单用户 ${contactToStringLong(m.from())}申请加入${groupToAdd}, 我已经把他忽悠了。`);
+        return; // early exit
+      }
+      let typeRegEx = new RegExp(`好室友.*` + groupToAdd);
+      let keyroom = await Room.find({topic: typeRegEx});
+      if (keyroom) {
+        await maybeDownsizeKeyRoom(keyroom, contact);
+        await keyroom.add(contact);
+        await contact.say(hysAlreadyAddedMsg);
+        await contact.say(hsyGroupNickNameMsg);
+      } else {
+        await m.say(`囧...加群失败，请联系群主周载南(微信号:xinbenlv)。`);
+        logger.info(`Can't find group ${groupToAdd}`);
+      }
+    }
+    return true;
+  }
+  return false;
+};
+
+let maybeCreateUser = async function(m:Message):Promise<string/*userId*/> {
+  logger.debug(`Maybe create an user`);
+  let c = m.from();
+  let uid = HsyUtil.getUserIdFromName(c.name());
+  let q = new LoopbackQuerier();
+  let user = await q.getHsyUserByUid(uid);
+  if (!c.weixin()) {
+    c = await c.refresh();
+  }
+  logger.debug(`Got user of uid:${uid}: ${JSON.stringify(user)}`);
+  if (user === null || user === undefined) {
+    user = new HsyUser();
+    user.id = uid;
+    user.name = c.name();
+    user.created = new Date();
+    user.weixin = c.weixin();
+    logger.debug(`User of uid:${uid} does not exist, creating a user...`);
+  } else {
+    logger.debug(`User of uid:${uid} already existed`);
+  }
+  // TODO(zzn): avatar is currently empty file
+  // user.avatarId = await savePic('tmp/img/' + c.name() + '.jpg', await c.avatar());
+  user.lastUpdated = new Date();
+  await q.setHsyUser(user);
+  logger.debug(`User of uid:${uid} created/updated: ${JSON.stringify(user)}`);
+  return uid;
 };

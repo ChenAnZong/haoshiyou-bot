@@ -55,7 +55,7 @@ const loadListener = (evt) => {
     }
   }
   return fn;
-}
+};
 
 // purge require cache
 const purgeCache = (moduleName) => {
