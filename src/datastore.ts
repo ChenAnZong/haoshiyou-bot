@@ -1,6 +1,6 @@
 import {Message, Contact} from "wechaty";
 import {FriendRequest} from "wechaty/dist/src/friend-request";
-import {HsyListing} from "./loopbacksdk/models/HsyListing";
+import {HsyListing} from "../loopbacksdk/models/HsyListing";
 import {LoopbackQuerier} from "./loopback-querier";
 import { Logger, LoggerConfig } from "log4ts";
 import {HsyUtil} from "./hsy-util";

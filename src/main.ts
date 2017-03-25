@@ -80,7 +80,7 @@ configLogger();
 let eventHandler = {};
 
 if (!isProd) { // start a watcher only if it's not production environment.
-  watch('./listener', (e, filename) => {
+  watch('./src/listener', (e, filename) => {
     let evt = filename.substring(0, filename.length - 3);
     console.log(`${e}: ${filename}`);
 
@@ -107,10 +107,8 @@ if (!isProd) { // start a watcher only if it's not production environment.
 
 // Bind events
 EVENT_LIST.forEach(evt => {
-  console.log(`XXX Evt = ${evt}`);
   eventHandler[evt] = loadListener(evt);
   bot.on(evt, eventHandler[evt]);
 });
-
 
 bot.init();

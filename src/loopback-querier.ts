@@ -1,5 +1,5 @@
-import {HsyListing} from "./loopbacksdk/models/HsyListing";
-import {HsyUser} from "./loopbacksdk/models/HsyUser";
+import {HsyListing} from "../loopbacksdk/models/HsyListing";
+import {HsyUser} from "../loopbacksdk/models/HsyUser";
 import {HsyUtil} from "./hsy-util";
 const config = {
   "loopback": {
