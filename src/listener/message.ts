@@ -132,7 +132,9 @@ let findRoomByKey = async function(key:string):Promise<Room> {
  * @returns {Promise<boolean>} true if the message is processed (and should not be processed anymore)
  */
 let maybeBlacklistUser = async function(m: Message):Promise<Boolean> {
-  if(isAdmin(m.from()) && isTalkingToMePrivately(m) && /加黑名单/) {
+  if(isAdmin(m.from())
+      && isTalkingToMePrivately(m)
+      && /加黑名单/.test(m.content())) {
     let blackListObj = GLOBAL_blackListCandidates[m.from().remark()];
     // not able to find a blacklist candidate.
     if (blackListObj === undefined || blackListObj === null) return false;
@@ -144,6 +146,8 @@ let maybeBlacklistUser = async function(m: Message):Promise<Boolean> {
       } else {
         let indexOfCandidate = m.content().slice(4); //"加黑名单1"取编号
         await m.say(`正在把用户${indexOfCandidate}, ${contactToStringLong(blackListObj.candidates[indexOfCandidate])}，加入黑名单...`);
+        logger.info(`正在把用户${indexOfCandidate}, ${contactToStringLong(blackListObj.candidates[indexOfCandidate])}，加入黑名单...`);
+
         let contactToBlacklist:Contact = blackListObj.candidates[indexOfCandidate];
         contactToBlacklist.remark(contactToBlacklist.name().slice(0,5)/*in case too long of name*/ + '#黑名单');
         let teamRoom = await findRoomByKey("大军团");
@@ -164,6 +168,7 @@ let maybeBlacklistUser = async function(m: Message):Promise<Boolean> {
     }
     return true;
   } else if (isAdmin(m.from()) &&
+      m.room() !== null &&
       /好室友/.test(m.room().topic()) &&
       /无关|修改群昵称/.test(m.content()) &&
       /^@/.test(m.content())) {
