@@ -9,7 +9,7 @@ managing the HaoShiYou wechat groups run by volunteers of haoshiyou.org
 To start running in a docker
 
 ```bash
-docker run --env CLOUDINARY_SECRET=$CLOUDINARY_SECRET -ti --volume="$(pwd)":/bot --rm zixia/wechaty main.ts
+docker run --env CLOUDINARY_SECRET=$CLOUDINARY_SECRET -ti --volume="$(pwd)":/bot --rm zixia/wechaty src/main.ts
 ```
 
 
