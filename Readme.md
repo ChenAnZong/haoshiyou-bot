@@ -51,6 +51,7 @@ Or http://haoshiyou-server-dev.herokuapp.com/api/HsyListings?filter={%22where%22
 * Management Function
   - [X] Kick a group member if received kicking instruction from a group and add blacklist
   - [X] Honor black list in the remarks
+  - [X] Whoever is trying to invite a blacklisted user will be blacklisted and kickout as weel
 
 * Productivity
   - [ ] Hot reload typescript

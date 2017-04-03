@@ -100,5 +100,3 @@ export class LoopbackQuerier {
     console.log(`Got user of uid:${uid}: ${JSON.stringify(hsyUser)}`);
   }
 }
-
-LoopbackQuerier.mainSet();

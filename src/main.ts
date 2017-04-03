@@ -20,7 +20,7 @@ let configLogger = function() {
   let layout = new BasicLayout();
   appender.setLayout(layout);
   let config = new LoggerConfig(appender);
-  config.setLevel(LogLevel.ALL);
+  config.setLevel(LogLevel.DEBUG);
   Logger.setConfig(config);
 };
 const isProd = process.env.NODE_ENV === 'production';

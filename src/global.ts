@@ -1,13 +1,8 @@
-import {HsyGroupEnum} from "./datastore";
-
 // Used as a global variable
-// TODO(zzn): maybe move to database or at least consider use a interface
+import {HsyGroupEnum} from "./model";
+
 export let GLOBAL_blackListCandidates = {
     // 'adminRemark': { time: unixTime, candidates: [blaclistUser1, blacklistUser2]}
-};
-
-export let Global_allManagedGroups = {
-    // HsyGroupEnum.value: Room instance
 };
 
 export const GROUP_DICT = {

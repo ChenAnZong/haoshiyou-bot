@@ -4,6 +4,7 @@ import {HsyListing} from "../loopbacksdk/models/HsyListing";
 import {LoopbackQuerier} from "./loopback-querier";
 import { Logger, LoggerConfig } from "log4ts";
 import {HsyUtil} from "./hsy-util";
+import {HsyBotLoggerType, HsyGroupEnum, HsyListingTypeEnum} from "./model";
 
 const file = 'log.json';
 const fileListings = 'potential-posting.json';
@@ -22,46 +23,6 @@ class HsyBotLogObject {
   }
 }
 
-/**
- * Please never reuse enum ids, since things here goes into logs.
- *
- * NextId = 7;
- */
-export enum HsyGroupEnum {
-  TestGroup = 0,
-  SouthBayEast = 1,
-  SouthBayWest = 2,
-  EastBay = 3,
-  SanFrancisco = 4,
-  MidPeninsula = 5,
-  ShortTerm = 6,
-  OldFriends = 7,
-  Seattle = 8,
-  BigTeam = 9,
-  None = -1,
-}
-
-/**
- * Please never reuse enum ids, since things here goes into logs.
- *
- * NextId = 2;
- */
-export enum HsyListingTypeEnum {
-  NeedRoommate = 0,
-  NeedRoom = 1,
-}
-
-/**
- * Please never reuse enum ids, since things here goes into logs.
- *
- * NextId = 5;
- */
-export enum HsyBotLoggerType {
-  debugInfo = 1,
-  chatEvent = 2,
-  friendRequestEvent = 3,
-  botAddToGroupEvent = 4
-}
 
 export class HsyBotLogger {
   private static lq:LoopbackQuerier = new LoopbackQuerier();
@@ -93,7 +54,7 @@ export class HsyBotLogger {
   private static async log(logItem:HsyBotLogObject):Promise<void> {
     let inspectedLogItem = util.inspect(logItem);
     let msg = `${JSON.stringify(inspectedLogItem)}`;
-    this.logger.debug(msg);
+    this.logger.trace(msg);
     await jsonfile.writeFileSync(file, inspectedLogItem, {flag: 'a'});
   }
 

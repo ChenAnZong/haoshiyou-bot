@@ -13,3 +13,4 @@ potential-posting.json
 .config
 yarn.lock
 tmp
+npm-debug.log
