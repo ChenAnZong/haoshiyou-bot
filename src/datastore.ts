@@ -14,7 +14,7 @@ class HsyBotLogObject {
   public type: HsyBotLoggerType;
   public contact:Contact;
   public groupEnum:HsyGroupEnum;
-  public rawChatMessage:Message; // for logging the original messsage
+  public rawChatMessage:Message; // for logging the original message
   public friendRequestMessage:string;
   public debugMessage:string;
   public timestamp:Date;
@@ -74,9 +74,9 @@ export class HsyBotLogger {
     };
 
     let hsyListing:HsyListing = new HsyListing();
-    hsyListing.ownerId = HsyUtil.getUserIdFromName(c.name());
+    hsyListing.ownerId = HsyUtil.getHsyUserIdFromName(c.name());
     hsyListing.lastUpdated = new Date();
-    hsyListing.uid = HsyUtil.getUserIdFromName(c.name());
+    hsyListing.uid = HsyUtil.getHsyUserIdFromName(c.name());
     hsyListing.content = m.content();
     hsyListing.listingTypeEnum = HsyListingTypeEnum[
         /求/.test(m.content()) ? HsyListingTypeEnum.NeedRoom : HsyListingTypeEnum.NeedRoommate
@@ -91,12 +91,12 @@ export class HsyBotLogger {
 
   public static async logListingImage(m:Message, hsyGroupEnum:HsyGroupEnum, imagePublicId:string) {
     let c:Contact = m.from();
-    let uid = HsyUtil.getUserIdFromName(c.name());
+    let uid = HsyUtil.getHsyUserIdFromName(c.name());
     let hsyListing:HsyListing = await HsyBotLogger.lq.getHsyListingByUid(uid);
     if (hsyListing === undefined || hsyListing === null) {
       // create new listing
       hsyListing = new HsyListing();
-      hsyListing.ownerId = HsyUtil.getUserIdFromName(c.name());
+      hsyListing.ownerId = HsyUtil.getHsyUserIdFromName(c.name());
       hsyListing.uid = uid;
       hsyListing.listingTypeEnum = HsyListingTypeEnum[HsyListingTypeEnum.NeedRoommate];
       hsyListing.title = m.content().slice(0, 25);
@@ -112,7 +112,7 @@ export class HsyBotLogger {
     let updatedHsyListing = await HsyBotLogger.lq.setHsyListing(hsyListing);
 
     HsyBotLogger.logger.debug(`Done updating image ${imagePublicId} for contact ${uid}`);
-    HsyBotLogger.logger.debug(`updatedHsyListing =   ${JSON.stringify(updatedHsyListing)}`);
+    HsyBotLogger.logger.debug(`updatedHsyListing = ${JSON.stringify(updatedHsyListing)}`);
     return updatedHsyListing;
   }
 }

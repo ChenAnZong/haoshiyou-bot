@@ -40,12 +40,12 @@ const EVENT_LIST = [
 ];
 
 
-// Load lisenter
+// Load listener
 const loadListener = (evt) => {
   let fn;
   try {
     fn = require(`./listener/${evt}`);
-    console.log(`binded listener: ${evt}`);
+    console.log(`bound listener: ${evt}`);
   } catch (e) {
     fn = () => void 0;
     if (e.toString().indexOf('Cannot find module') > -1) {
@@ -91,7 +91,7 @@ if (!isProd) { // start a watcher only if it's not production environment.
         // It may read an empty file, if not use setTimeout
         setTimeout(() => {
           bot.removeListener(evt, eventHandler[evt]);
-          //console.log('filecontent: ' + fs.readFileSync(`./listener/${evt}.js`));
+          //console.log('fileContent: ' + fs.readFileSync(`./listener/${evt}.js`));
           eventHandler[evt] = loadListener(evt);
           bot.on(evt, eventHandler[evt]);
         }, 1000);
@@ -111,4 +111,5 @@ EVENT_LIST.forEach(evt => {
   bot.on(evt, eventHandler[evt]);
 });
 
+//noinspection JSIgnoredPromiseFromCall
 bot.init();

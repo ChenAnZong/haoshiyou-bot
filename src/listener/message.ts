@@ -35,10 +35,12 @@ exports = module.exports = async function onMessage(m) {
   if (!HsyUtil.shouldCareAboutMessage(m)) return; // We don't care
 
   logger.trace(`Got a msg type: ${m.type()}`);
-  if (HsyUtil.isAdmin(m.from())) {
+  if (await HsyUtil.isHsyAdmin(m.from())) {
     logger.info(`A message from Admin`);
-  } else if (HsyUtil.isBlacklisted(m.from())) {
+  } else if (await HsyUtil.isHsyBlacklisted(m.from())) {
     logger.info(`A message from Blacklisted`);
+  } else {
+    logger.debug(`A message from normal contact`);
   }
 
   await maybeBlacklistUser(m) || // if true stops further processing
@@ -90,29 +92,36 @@ let saveImgFileFromMsg = async function(message: Message):Promise<any> {
  *  1. it will thank the admin and repeat the warning message from the admin
  *  2. it will ask the admin whether the user needs to be blacklisted TODO(zzn):
  * @param m
- * @returns {Promise<boolean>} true if the message is processed (and should not be processed anymore)
+ * @returns {Promise<boolean>} true if the message is processed
+ *   (and should not be processed anymore)
  */
 let maybeBlacklistUser = async function(m: Message):Promise<Boolean> {
-  if(HsyUtil.isAdmin(m.from())
-      && WeChatyApiX.isTalkingToMePrivately(m)
+  if (! await HsyUtil.isHsyAdmin(m.from())) {
+    return false; // Not an admin
+  }
+  let admin = m.from();
+  if(WeChatyApiX.isTalkingToMePrivately(m)
       && /加黑名单/.test(m.content())) {
-    let admin = m.from();
-    let blackListObj = GLOBAL_blackListCandidates[m.from().remark()];
+    // find the last one being marked blacklist by this admin
+    let blackListObj = GLOBAL_blackListCandidates[admin.remark()];
+
     // not able to find a blacklist candidate.
     if (blackListObj === undefined || blackListObj === null) return false;
     let timeLapsedInSeconds = (Date.now() - blackListObj.time) / 1000;
     if (blackListObj !== null && blackListObj !== undefined) {
       if ( timeLapsedInSeconds>  60 * 5) {
-        await m.say(`从刚才群内警告到现在确认加黑名单已经过了${(timeLapsedInSeconds)/60}分钟，太久了，请重新警告`);
+        await admin.say(`从刚才群内警告到现在确认加黑名单已经过了` +
+            `${(timeLapsedInSeconds)/60}分钟，太久了，请重新警告`);
         delete GLOBAL_blackListCandidates[m.from().remark()];
       } else {
         let indexOfCandidate = m.content().slice(4); //"加黑名单1"取编号
         let contactToBlacklist:Contact = blackListObj.candidates[indexOfCandidate];
 
-        await admin.say(`正在把用户加入黑名单，${WeChatyApiX.contactToStringLong(contactToBlacklist)}...`);
+        await admin.say(`正在把用户加入黑名单，` +
+            `${WeChatyApiX.contactToStringLong(contactToBlacklist)}...`);
         await HsyUtil.addToBlacklist(contactToBlacklist);
 
-        let teamRoom = await HsyUtil.findRoomByKey("大军团");
+        let teamRoom = await HsyUtil.findHsyBigTeamRoom();
         await teamRoom.say(`应管理员${admin}的要求，` +
             `正在踢出用户${WeChatyApiX.contactToStringLong(contactToBlacklist)}...`);
         await HsyUtil.kickFromAllHsyGroups(contactToBlacklist);
@@ -121,19 +130,19 @@ let maybeBlacklistUser = async function(m: Message):Promise<Boolean> {
       }
     }
     return true;
-  } else if (HsyUtil.isAdmin(m.from()) &&
-      m.room() !== null &&
+  } else if (m.room() !== null &&
       /好室友/.test(m.room().topic()) &&
       /无关|修改群昵称/.test(m.content()) &&
       /^@/.test(m.content())) {
-    let mentionName = m.content().slice(1)/*ignoring@*/.replace(" "/*Space Char in Chinese*/, " ").split(" ")[0];
+    let mentionName = m.content().slice(1)/*ignoring@*/
+        .replace(" "/*Space Char in Chinese*/, " ").split(" ")[0];
     logger.debug(`寻找mentionName = ${mentionName}`);
     let foundUsers = findMemberFromGroup(m.room(), new RegExp(mentionName));
-    foundUsers = foundUsers.filter(c=> {
+    foundUsers = await foundUsers.filter(async c=> {
       if (c.self()) {
         logger.trace(`Ignoring SELF ${WeChatyApiX.contactToStringLong(c)}`);
         return false;
-      } else if (HsyUtil.isAdmin(c)) {
+      } else if (await HsyUtil.isHsyAdmin(c)) {
         logger.trace(`Ignoring ADMIN ${WeChatyApiX.contactToStringLong(c)}`);
         return false;
       }
@@ -146,15 +155,18 @@ let maybeBlacklistUser = async function(m: Message):Promise<Boolean> {
         logger.info(`管理员"${m.from().name()}"对用户 ${mentionName} 发出警告`);
 
         // Repeat the warning from the admin
-        m.room().say(`感谢管理员@${m.from().name()}\n\n${m.content()}`);
+        await m.room().say(`感谢管理员@${m.from().name()}\n\n${m.content()}`);
 
-        let buffer = `管理员 ${m.from().name()}，你好，你刚才在${m.room().topic()}这个群里警告了用户@${mentionName}，符合这个名称的群内的用户有：\n`;
+        let buffer = `管理员 ${m.from().name()}，你好，你刚才在${m.room().topic()}这个群` +
+            `里警告了用户@${mentionName}，符合这个名称的群内的用户有：\n`;
         for (let i = 0; i < foundUsers.length; i++) {
           let candidate = foundUsers[i];
-          buffer += `${i}. 昵称:${candidate.name()}, 备注:${candidate.remark()}, 群昵称: ${WeChatyApiX.getGroupNickNameFromContact(candidate)} \n`;
+          buffer += `${i}. 昵称:${candidate.name()}, 备注:${candidate.remark()}, ` +
+              `群昵称: ${WeChatyApiX.getGroupNickNameFromContact(candidate)} \n`;
         }
         buffer += `请问要不要把这个用户加黑名单？五分钟内回复 "加黑名单[数字编号]"\n`;
-        buffer += `例如 "加黑名单0"` + `将会把${foundUsers[1]} 加入黑名单:${WeChatyApiX.contactToStringLong(foundUsers[0])}`;
+        buffer += `例如 "加黑名单0"，将会把${foundUsers[1]} ` +
+            `加入黑名单:${WeChatyApiX.contactToStringLong(foundUsers[0])}`;
         await m.from().say(buffer);
         GLOBAL_blackListCandidates[m.from().remark()] = {
           time: Date.now(),
@@ -165,6 +177,8 @@ let maybeBlacklistUser = async function(m: Message):Promise<Boolean> {
       logger.warn(`Didn't found the user being warned against: ${mentionName}.`);
       logger.warn(`Full Member List of Group ${m.room().topic()}:`);
       logger.warn(`${m.room().memberList()}:`);
+      await admin.say(`管理员您好，您刚才在"${m.room().topic()}"群里要求踢出的用户"${mentionName}" `+
+          `我们没有找到，请在确认该用户仍然在该群里，并且请在同一个群尝试at他的昵称而不是群昵称。`);
     }
     return true;
   }
@@ -176,7 +190,7 @@ let maybeBlacklistUser = async function(m: Message):Promise<Boolean> {
  */
 let maybeExtractPostingMessage = async function(m:Message):Promise<Boolean> {
   if (WeChatyApiX.isTalkingToMePrivately(m) || /好室友/.test(m.room().topic())) {
-    let userId = maybeCreateUser(m);
+    await maybeCreateUser(m);
     if (m.type() == MsgType.IMAGE) {
       logger.info(`${m.from().name()} sent an image.`);
       let publicId = await saveImgFileFromMsg(m);
@@ -188,28 +202,29 @@ let maybeExtractPostingMessage = async function(m:Message):Promise<Boolean> {
       logger.info(`${m.from().name()} say: ${m.content()}`);
       if (m.content().length >= 80 &&
           /租|rent|roomate|小区|公寓|lease/.test(m.content())) {
-        HsyBotLogger.logListing(m, HsyUtil.getHsyGroupEnum(m.room().topic()));
+        await HsyBotLogger.logListing(m, HsyUtil.getHsyGroupEnum(m.room().topic()));
       }
     }
     return true;
   }
 };
 
-let maybeDownsizeKeyRoom = async function(keyroom: Room, c:Contact) {
-  if (/老友/.test(keyroom.topic())) return;
-  if (keyroom.memberList().length >= groupDownSizeTriggerThreshold) { // triggering
-    await keyroom.say(hsyGroupClearMsg);
+let maybeDownsizeKeyRoom = async function(keyRoom: Room, c:Contact) {
+  if (/老友/.test(keyRoom.topic())) return;
+  if (keyRoom.memberList().length >= groupDownSizeTriggerThreshold) { // triggering
+    await keyRoom.say(hsyGroupClearMsg);
     let potentialRotationList = [];
     let noGroupNickNames = [];
-    let cList:Contact[] = keyroom.memberList();
+    let cList:Contact[] = keyRoom.memberList();
     let shouldRemoveSize = cList.length - groupDownSizeTarget;
     let shouldRemoveList = [];
-    for (let i = 0; i < keyroom.memberList().length - newComerSize/* never newComer */; i++) {
+    for (let i = 0; i < keyRoom.memberList().length - newComerSize/* never newComer */; i++) {
       let c:Contact = cList[i];
       if (c.self()) continue; // never does anything with haoshiyou-admin itself.
       let groupNickName = WeChatyApiX.getGroupNickNameFromContact(c);
       if (/^(管|介|群主)-/.test(groupNickName) || /管理员/.test(c.remark())) {
-        logger.info(`略过管理员 ${c.name()}, 群里叫做 ${WeChatyApiX.getGroupNickNameFromContact(c)}，备注${c.remark()}`);
+        logger.info(`略过管理员 ${c.name()}, 群里叫做 ` +
+            `${WeChatyApiX.getGroupNickNameFromContact(c)}，备注${c.remark()}`);
         // pass, never remove
       } else if (/^(招|求)租/.test(groupNickName)) {
         // good format, but need to rotate
@@ -231,19 +246,19 @@ let maybeDownsizeKeyRoom = async function(keyroom: Room, c:Contact) {
       await c.say(`群里有点儿满，我先清一下人哦`);
     }
     await Promise.all(shouldRemoveList.map(async (c:Contact) => {
-      await HsyBotLogger.logDebug(`Deleting contact ${c.name()} from group ${keyroom.topic()}`);
-      let msg = (`亲 ~ 你在${keyroom.topic()}里面`) +
+      await HsyBotLogger.logDebug(`Deleting contact ${c.name()} from group ${keyRoom.topic()}`);
+      let msg = (`亲 ~ 你在${keyRoom.topic()}里面`) +
           (/^(招|求)租/.test(WeChatyApiX.getGroupNickNameFromContact(c)) ?
               `待得比较久了，如果你已经在群里找到室友或者房子，恭喜你！`  +
               `请联系群主 周载南（微信号xinbenlv）加入"老友群"，` :
               `没有按照规则修改群昵称，`) +
           `这里我先把你挪出本群哈，随时加我（小助手，微信号haoshiyou-admin）重新入群。`;
       await c.say(msg);
-      await keyroom.del(c);
+      await keyRoom.del(c);
     }));
   } else {
-    logger.info(`Group Size of ${keyroom.topic()} is ` +
-        `still good (${keyroom.memberList().length}).`)
+    logger.info(`Group Size of ${keyRoom.topic()} is ` +
+        `still good (${keyRoom.memberList().length}).`)
   }
 };
 
@@ -295,19 +310,20 @@ let maybeAddToHsyGroups = async function(m:Message):Promise<Boolean> {
       await logger.info(`Start to add ${contact} to room ${groupToAdd}.`);
       await HsyBotLogger.logBotAddToGroupEvent(contact, groupType);
       await m.say(`好的，你要加${groupToAdd}的群对吧，我这就拉你进群。`);
-      if (HsyUtil.isBlacklisted(m.from())) {
+      if (HsyUtil.isHsyBlacklisted(m.from())) {
         logger.info(`黑名单用户 ${WeChatyApiX.contactToStringLong(m.from())}申请加入${groupToAdd}`);
         await m.say(`我找找啊`);
         await m.say(`不好意思，这个群暂时满了，我清理一下请稍等...`);
-        let teamRoom = await HsyUtil.findRoomByKey("大军团");
-        teamRoom.say(`黑名单用户 ${WeChatyApiX.contactToStringLong(m.from())}申请加入${groupToAdd}, 我已经把他忽悠了。`);
+        let teamRoom = await HsyUtil.findHsyRoomByKey("大军团");
+        await teamRoom.say(`黑名单用户 ${WeChatyApiX.contactToStringLong(m.from())}` +
+            `申请加入${groupToAdd}, 我已经把他忽悠了。`);
         return; // early exit
       }
       let typeRegEx = new RegExp(`好室友.*` + groupToAdd);
-      let keyroom = await Room.find({topic: typeRegEx});
-      if (keyroom) {
-        await maybeDownsizeKeyRoom(keyroom, contact);
-        await keyroom.add(contact);
+      let keyRoom = await Room.find({topic: typeRegEx});
+      if (keyRoom) {
+        await maybeDownsizeKeyRoom(keyRoom, contact);
+        await keyRoom.add(contact);
         await contact.say(hysAlreadyAddedMsg);
         await contact.say(hsyGroupNickNameMsg);
       } else {
@@ -320,30 +336,32 @@ let maybeAddToHsyGroups = async function(m:Message):Promise<Boolean> {
   return false;
 };
 
-let maybeCreateUser = async function(m:Message):Promise<string/*userId*/> {
+let maybeCreateUser = async function(m:Message):Promise<string /*userId*/ > {
   logger.trace(`Maybe create an user`);
   let c = m.from();
-  let uid = HsyUtil.getUserIdFromName(c.name());
+  let uid = HsyUtil.getHsyUserIdFromName(c.name());
   let q = new LoopbackQuerier();
   let user = await q.getHsyUserByUid(uid);
-  if (!c.weixin()) {
-    c = await c.refresh();
-  }
-  logger.trace(`Got user of uid:${uid}: ${JSON.stringify(user)}`);
   if (user === null || user === undefined) {
+    logger.info(`User of uid:${uid} does not exist, creating a user...`);
     user = new HsyUser();
     user.id = uid;
     user.name = c.name();
     user.created = new Date();
-    user.weixin = c.weixin();
-    logger.trace(`User of uid:${uid} does not exist, creating a user...`);
+
+    if (!c.weixin()) {
+      c = await c.refresh();
+    }
+    if (c.weixin()) user.weixin = c.weixin();
   } else {
     logger.trace(`User of uid:${uid} already existed`);
+    logger.trace(`User stored: ${uid}: ${JSON.stringify(user)}`);
   }
-  // TODO(zzn): avatar is currently empty file
-  // user.avatarId = await savePic('tmp/img/' + c.name() + '.jpg', await c.avatar());
+
+  // TODO(zzn): avatar is sometimes currently empty file
+  user.avatarId = await savePic('tmp/img/' + c.name() + '.jpg', await c.avatar());
   user.lastUpdated = new Date();
   await q.setHsyUser(user);
-  logger.trace(`User of uid:${uid} created/updated: ${JSON.stringify(user)}`);
+  logger.info(`User of uid:${uid} created/updated: ${JSON.stringify(user)}`);
   return uid;
 };

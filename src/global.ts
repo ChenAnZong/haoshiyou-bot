@@ -1,10 +1,10 @@
 // Used as a global variable
 import {HsyGroupEnum} from "./model";
-
 export let GLOBAL_blackListCandidates = {
-    // 'adminRemark': { time: unixTime, candidates: [blaclistUser1, blacklistUser2]}
+    // 'adminRemark': { time: unixTime, candidates: [blacklistUser1, blacklistUser2]}
 };
 
+// TODO(zzn): use a BiMap instead
 export const GROUP_DICT = {
     "南湾西":HsyGroupEnum.SouthBayWest,
     "南湾东":HsyGroupEnum.SouthBayEast,
@@ -20,11 +20,11 @@ export const GROUP_DICT = {
 export const greetingsMsg =
     `你好，谢谢你加我们群，请问你要在哪个区域找房子或者室友？\n` +
     `我们是按照区域分群的。我拉你入群：\n` +
-    `  【南湾西】包含Palo Alto，Stanford, Mountain View，Sunnyvale，Cupertino一带；\n` +
-    `  【南湾东】包含San Jose，Santa Clara，Milpitas一带；\n` +
-    `  【东湾】湾东边Milpitas以北，包括Fremont，Hayward，Berkeley等；\n` +
+    `  【南湾西】包含 Palo Alto，Stanford, Mountain View，Sunnyvale，Cupertino 一带；\n` +
+    `  【南湾东】包含 San Jose，Santa Clara，Milpitas一带；\n` +
+    `  【东湾】湾东边 Milpitas以北，包括Fremont，Hayward，Berkeley等；\n` +
     `  【中半岛】Redwood以北，San Francisco以南；\n` +
-    `  【三番】旧金山(San Francisco)城里，含South San Francisco；\n`+
+    `  【三番】旧金山 (San Francisco) 城里，含South San Francisco；\n`+
     `  【西雅图】我们新开设了西雅图好室友群，服务大西雅图地区；\n`+
     `  【短租】如果你希望在旧金山湾区任意地方内进行3个月以内短租（出租和求租），请加短租群；\n`+
     `请回复要加哪个群，例如： 南湾西\n` +
@@ -47,13 +47,13 @@ export const hsyGroupNickNameMsg = `
 “介-李雷”表示你是李雷，在群里目前没有需求，仅为了介绍朋友进群。“介”这类可以不写时间地点。 
 
 本群中对地点常用缩写约定如下：
-  SF-San Francisco,  
-  PA-Palo Alto,  
-  MTV-Mountain View,  
-  SV-Sunnyvale,  
-  FMNT-Fremont,  
-  SJ-San Jose,
-  MPTS-Milpitas,
+  SF - San Francisco,  
+  PA - Palo Alto,  
+  MTV - Mountain View,  
+  SV - Sunnyvale,  
+  FMNT - Fremont,  
+  SJ - San Jose,
+  MPTS - Milpitas,
   SEA - Seattle
   KIR - Kirkland
   
