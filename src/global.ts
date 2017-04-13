@@ -17,6 +17,13 @@ export const GROUP_DICT = {
     "大军团": HsyGroupEnum.BigTeam
 };
 
+export let getStringFromHsyGroupEnum = function(input:HsyGroupEnum):string {
+  for (let key in GROUP_DICT) {
+    if (GROUP_DICT[key] == input) return key;
+  }
+  return null;
+};
+
 export const greetingsMsg =
     `你好，谢谢你加我们群，请问你要在哪个区域找房子或者室友？\n` +
     `我们是按照区域分群的。我拉你入群：\n` +

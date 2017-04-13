@@ -5,6 +5,7 @@
  * NextId = 7;
  */
 export enum HsyGroupEnum {
+  None = -1,
   TestGroup = 0,
   SouthBayEast = 1,
   SouthBayWest = 2,
@@ -15,7 +16,6 @@ export enum HsyGroupEnum {
   OldFriends = 7,
   Seattle = 8,
   BigTeam = 9,
-  None = -1,
 }
 
 /**

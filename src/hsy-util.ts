@@ -1,7 +1,7 @@
 import {Message, Contact, Room} from "wechaty";
 import {HsyGroupEnum} from "./model";
 import Global = NodeJS.Global;
-import {GROUP_DICT} from "./global";
+import {GROUP_DICT, getStringFromHsyGroupEnum} from "./global";
 import {Logger} from "log4ts";
 
 const logger = Logger.getLogger(`main`);
@@ -18,9 +18,10 @@ export class HsyUtil {
     if (!c.isReady()) {
       await c.refresh();
     }
-    let result = /#黑名单$/.test(c.remark());
-    if (result)
+    let result:boolean = /#黑名单$/.test(c.alias());
+    if (result) {
       logger.info(`${WeChatyApiX.contactToStringLong(c)}是黑名单用户`);
+    }
     return result;
   };
 
@@ -28,7 +29,7 @@ export class HsyUtil {
     if (!c.isReady()) {
       await c.refresh();
     }
-    return /#管理员$/.test(c.remark());
+    return /#管理员$/.test(c.alias());
   };
 
   public static isHsyGroup = function(topic:string) {
@@ -52,6 +53,11 @@ export class HsyUtil {
     return await Room.find({topic: typeRegEx});
   };
 
+  public static findHsyRoomByEnum = async function(hsyGroupEnum:HsyGroupEnum):Promise<Room> {
+    let name:string = getStringFromHsyGroupEnum(hsyGroupEnum);
+    return await HsyUtil.findHsyRoomByKey(name);
+  };
+
   public static findHsyBigTeamRoom = async function():Promise<Room> {
     return await HsyUtil.findHsyRoomByKey('大军团');
   };
@@ -73,7 +79,7 @@ export class HsyUtil {
   };
 
   public static addToBlacklist = async function(contact:Contact) {
-    if (HsyUtil.isHsyAdmin(contact)) {
+    if (await HsyUtil.isHsyAdmin(contact)) {
       logger.trace(`试图把管理员加入黑名单，${WeChatyApiX.contactToStringLong(contact)}...`);
     } else {
       logger.trace(`正在把用户加入黑名单，${WeChatyApiX.contactToStringLong(contact)}...`);
@@ -82,7 +88,7 @@ export class HsyUtil {
   };
 
   public static kickFromAllHsyGroups = async function(contact:Contact) {
-    if (HsyUtil.isHsyAdmin(contact)) {
+    if (await HsyUtil.isHsyAdmin(contact)) {
       logger.trace(`试图清理管理员${WeChatyApiX.contactToStringLong(contact)}， 放弃...`);
       return;
     }
@@ -103,6 +109,29 @@ export class HsyUtil {
             WeChatyApiX.isTalkingToMePrivately(message) ||
             HsyUtil.getHsyGroupEnum(message.room().topic()) != HsyGroupEnum.None
         );
+  };
+
+  public static getAddGroupIndentFromMessage = function(
+      content:string):HsyGroupEnum {
+    if (/南湾西|Mountain View|mtv|sv|Sunnyvale|Palo Alto|Stanford|Facebook|Google|Menlo Park/.test(content)) {
+      return HsyGroupEnum.SouthBayEast;
+    } else if (/南湾东|Milpitas|San Jose|Santa Clara|SJ|Campbell|Los Gatos/.test(content)) {
+      return HsyGroupEnum.SouthBayWest;
+    } else if (/东湾|奥克兰|伯克利|Berkeley|Fremont|Hayward|Newark/.test(content)) {
+      return HsyGroupEnum.EastBay;
+    } else if (/(中)半岛|Redwood|San Carlos|San Mateo|Burlingame|Millbrae|San Bruno/.test(content)) {
+      return HsyGroupEnum.MidPeninsula;
+    } else if (/旧金山|三番|San Francisco|Uber|AirBnb/.test(content)) {
+      return HsyGroupEnum.SanFrancisco;
+    } else if (/西雅图/.test(content)) {
+      return HsyGroupEnum.Seattle;
+    } else if (/短租/.test(content)) {
+      return HsyGroupEnum.ShortTerm;
+    } else if (/测试/.test(content)) {
+      return HsyGroupEnum.TestGroup;
+    } else if (/老友/.test(content)) {
+      return HsyGroupEnum.OldFriends;
+    } else return HsyGroupEnum.None;
   }
 }
 
@@ -110,7 +139,7 @@ export class WeChatyApiX {
   public static contactToStringLong = function(c:Contact):string {
     return `` +
         (StringUtil.isNullOrUndefinedOrEmpty(c.name()) ? `无昵称` : `昵称:"${c.name()}", `) +
-        (StringUtil.isNullOrUndefinedOrEmpty(c.remark()) ? `无备注` : `备注:"${c.remark()}", `) +
+        (StringUtil.isNullOrUndefinedOrEmpty(c.alias()) ? `无备注` : `备注:"${c.alias()}", `) +
         (StringUtil.isNullOrUndefinedOrEmpty(
             WeChatyApiX.getGroupNickNameFromContact(c)) ?
             `无群昵称` : `群昵称: "${WeChatyApiX.getGroupNickNameFromContact(c)}"`);

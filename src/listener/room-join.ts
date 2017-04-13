@@ -8,9 +8,9 @@ exports = module.exports = async function onRoomJoin(room:Room, inviteeList, inv
   logger.info(`群 ${room.topic()}, ${inviter.name()}邀请${inviteeList.length}个新成员，内容如下`);
   let shouldBlacklistInviter = false;
   let blackListedInviteeList = [];
-  inviteeList.forEach((invitee) => {
+  await inviteeList.forEach(async (invitee) => {
     logger.info(`被邀请人: ${WeChatyApiX.contactToStringLong(invitee)}.`);
-    if (HsyUtil.isHsyBlacklisted(invitee)) {
+    if (await HsyUtil.isHsyBlacklisted(invitee)) {
       logger.info(`被邀请人: ${WeChatyApiX.contactToStringLong(invitee)}，是个黑名单成员.`);
       shouldBlacklistInviter = true;
       blackListedInviteeList.push(invitee);

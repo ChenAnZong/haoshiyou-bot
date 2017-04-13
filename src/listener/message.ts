@@ -50,7 +50,7 @@ exports = module.exports = async function onMessage(m) {
 
 let findMemberFromGroup = function(room:Room, regExp:RegExp):Array<Contact> {
   return room.memberList().filter(c => {
-    return regExp.test(c.name()) || regExp.test(c.remark())
+    return regExp.test(c.name()) || regExp.test(c.alias())
         || regExp.test(WeChatyApiX.getGroupNickNameFromContact(c));
   });
 };
@@ -103,7 +103,7 @@ let maybeBlacklistUser = async function(m: Message):Promise<Boolean> {
   if(WeChatyApiX.isTalkingToMePrivately(m)
       && /加黑名单/.test(m.content())) {
     // find the last one being marked blacklist by this admin
-    let blackListObj = GLOBAL_blackListCandidates[admin.remark()];
+    let blackListObj = GLOBAL_blackListCandidates[admin.alias()];
 
     // not able to find a blacklist candidate.
     if (blackListObj === undefined || blackListObj === null) return false;
@@ -112,7 +112,7 @@ let maybeBlacklistUser = async function(m: Message):Promise<Boolean> {
       if ( timeLapsedInSeconds>  60 * 5) {
         await admin.say(`从刚才群内警告到现在确认加黑名单已经过了` +
             `${(timeLapsedInSeconds)/60}分钟，太久了，请重新警告`);
-        delete GLOBAL_blackListCandidates[m.from().remark()];
+        delete GLOBAL_blackListCandidates[m.from().alias()];
       } else {
         let indexOfCandidate = m.content().slice(4); //"加黑名单1"取编号
         let contactToBlacklist:Contact = blackListObj.candidates[indexOfCandidate];
@@ -161,14 +161,14 @@ let maybeBlacklistUser = async function(m: Message):Promise<Boolean> {
             `里警告了用户@${mentionName}，符合这个名称的群内的用户有：\n`;
         for (let i = 0; i < foundUsers.length; i++) {
           let candidate = foundUsers[i];
-          buffer += `${i}. 昵称:${candidate.name()}, 备注:${candidate.remark()}, ` +
+          buffer += `${i}. 昵称:${candidate.name()}, 备注:${candidate.alias()}, ` +
               `群昵称: ${WeChatyApiX.getGroupNickNameFromContact(candidate)} \n`;
         }
         buffer += `请问要不要把这个用户加黑名单？五分钟内回复 "加黑名单[数字编号]"\n`;
         buffer += `例如 "加黑名单0"，将会把${foundUsers[1]} ` +
             `加入黑名单:${WeChatyApiX.contactToStringLong(foundUsers[0])}`;
         await m.from().say(buffer);
-        GLOBAL_blackListCandidates[m.from().remark()] = {
+        GLOBAL_blackListCandidates[m.from().alias()] = {
           time: Date.now(),
           candidates: foundUsers
         };
@@ -222,9 +222,9 @@ let maybeDownsizeKeyRoom = async function(keyRoom: Room, c:Contact) {
       let c:Contact = cList[i];
       if (c.self()) continue; // never does anything with haoshiyou-admin itself.
       let groupNickName = WeChatyApiX.getGroupNickNameFromContact(c);
-      if (/^(管|介|群主)-/.test(groupNickName) || /管理员/.test(c.remark())) {
+      if (/^(管|介|群主)-/.test(groupNickName) || /管理员/.test(c.alias())) {
         logger.info(`略过管理员 ${c.name()}, 群里叫做 ` +
-            `${WeChatyApiX.getGroupNickNameFromContact(c)}，备注${c.remark()}`);
+            `${WeChatyApiX.getGroupNickNameFromContact(c)}，备注${c.alias()}`);
         // pass, never remove
       } else if (/^(招|求)租/.test(groupNickName)) {
         // good format, but need to rotate
@@ -272,45 +272,20 @@ let maybeAddToHsyGroups = async function(m:Message):Promise<Boolean> {
     logger.debug(`${contact.name()}(weixin:${contact.weixin()}) sent a message ` +
         `type: ${m.type()} ` +
         `content: ${m.content()}`);
-    let groupToAdd = null;
+    let groupToAdd:HsyGroupEnum = null;
     if (/加群/.test(content)) {
       await m.say(greetingsMsg);
       return;
-    } else if (/南湾西|Mountain View|mtv|sv|Sunnyvale|Palo Alto|Stanford|Facebook|Google|Menlo Park/.test(content)) {
-      groupToAdd = "南湾西";
-      groupType = HsyGroupEnum.SouthBayEast;
-    } else if (/南湾东|Milpitas|San Jose|Santa Clara|SJ|Campbell|Los Gatos/.test(content)) {
-      groupToAdd = "南湾东";
-      groupType = HsyGroupEnum.SouthBayWest;
-    } else if (/东湾|奥克兰|伯克利|Berkeley|Fremont|Hayward|Newark/.test(content)) {
-      groupToAdd = "东湾";
-      groupType = HsyGroupEnum.EastBay;
-    } else if (/(中)半岛|Redwood|San Carlos|San Mateo|Burlingame|Millbrae|San Bruno/.test(content)) {
-      groupToAdd = "中半岛";
-      groupType = HsyGroupEnum.MidPeninsula;
-    } else if (/旧金山|三番|San Francisco|Uber|AirBnb/.test(content)) {
-      groupToAdd = "三番";
-      groupType = HsyGroupEnum.SanFrancisco;
-    } else if (/西雅图/.test(content)) {
-      groupToAdd = "西雅图";
-      groupType = HsyGroupEnum.Seattle;
-    } else if (/短租/.test(content)) {
-      groupToAdd = "短租";
-      groupType = HsyGroupEnum.ShortTerm;
-    } else if (/测试/.test(content)) {
-      groupToAdd = "测试";
-      groupType = HsyGroupEnum.TestGroup;
-    } else if (/老友/.test(content)) {
-      groupToAdd = "老友";
-      groupType = HsyGroupEnum.OldFriends;
+    } else {
+      groupToAdd = HsyUtil.getAddGroupIndentFromMessage(content);
     }
-    if (groupToAdd == null) { // found no valid group
+    if (groupToAdd == HsyGroupEnum.None) { // found no valid group
       await m.say(hsyCannotUnderstandMsg);
     } else {
       await logger.info(`Start to add ${contact} to room ${groupToAdd}.`);
       await HsyBotLogger.logBotAddToGroupEvent(contact, groupType);
-      await m.say(`好的，你要加${groupToAdd}的群对吧，我这就拉你进群。`);
-      if (HsyUtil.isHsyBlacklisted(m.from())) {
+      await m.say(`好的，你要加${HsyGroupEnum[groupToAdd]}的群对吧，我这就拉你进群。`);
+      if (await HsyUtil.isHsyBlacklisted(m.from())) {
         logger.info(`黑名单用户 ${WeChatyApiX.contactToStringLong(m.from())}申请加入${groupToAdd}`);
         await m.say(`我找找啊`);
         await m.say(`不好意思，这个群暂时满了，我清理一下请稍等...`);
@@ -319,8 +294,7 @@ let maybeAddToHsyGroups = async function(m:Message):Promise<Boolean> {
             `申请加入${groupToAdd}, 我已经把他忽悠了。`);
         return; // early exit
       }
-      let typeRegEx = new RegExp(`好室友.*` + groupToAdd);
-      let keyRoom = await Room.find({topic: typeRegEx});
+      let keyRoom = await HsyUtil.findHsyRoomByEnum(groupToAdd);
       if (keyRoom) {
         await maybeDownsizeKeyRoom(keyRoom, contact);
         await keyRoom.add(contact);
