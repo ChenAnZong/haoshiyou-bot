@@ -190,7 +190,7 @@ let maybeBlacklistUser = async function(m: Message):Promise<Boolean> {
  */
 let maybeExtractPostingMessage = async function(m:Message):Promise<Boolean> {
   if (WeChatyApiX.isTalkingToMePrivately(m) || /好室友/.test(m.room().topic())) {
-    await maybeCreateUser(m);
+    // await maybeCreateUser(m);
     if (m.type() == MsgType.IMAGE) {
       logger.info(`${m.from().name()} sent an image.`);
       let publicId = await saveImgFileFromMsg(m);

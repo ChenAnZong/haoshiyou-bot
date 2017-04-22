@@ -31,7 +31,9 @@ Or http://haoshiyou-server-dev.herokuapp.com/api/HsyListings?filter={%22where%22
         designated format.
       - Delete the first 10 members that was added to the group the earliests.
   - [X] Privately poked group members who haven't update the group nickname.
-  - [ ] Automatically delete friends if approaching 5000 friends cap. 
+  - [P] Automatically delete friends if approaching 5000 friends cap. 
+      **Postponed:** current version of web client does not support deleting, so we can't do it
+
 
 * Logging
   - [X] Logging chat data for future research.
@@ -41,6 +43,7 @@ Or http://haoshiyou-server-dev.herokuapp.com/api/HsyListings?filter={%22where%22
   - [X] Append all pictures to the listing 
   - [X] Add information about area and type
   - [X] Post to Haoshiyou-Server
+  - [ ] Store Contact's Avatar, stably
 
 * Advance function
   - [ ] Extract time, price, type from a list post
@@ -54,6 +57,6 @@ Or http://haoshiyou-server-dev.herokuapp.com/api/HsyListings?filter={%22where%22
   - [X] Whoever is trying to invite a blacklisted user will be blacklisted and kickout as weel
 
 * Productivity
-  - [ ] Hot reload typescript
-  - [ ] Refactor the code to split each event handler into a separate file
+  - [X] Hot reload typescript
+  - [X] Refactor the code to split each event handler into a separate file
 
