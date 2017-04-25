@@ -14,7 +14,8 @@ const groupDownSizeTriggerThreshold = 480;
 
 import {
   hsyGroupClearMsg, hsyCannotUnderstandMsg, hysAlreadyAddedMsg,
-  hsyGroupNickNameMsg, greetingsMsg, GLOBAL_blackListCandidates, GROUP_DICT
+  hsyGroupNickNameMsg, greetingsMsg, GLOBAL_blackListCandidates, GROUP_DICT,
+  getStringFromHsyGroupEnum
 } from "../global";
 import {HsyGroupEnum} from "../model";
 
@@ -285,7 +286,7 @@ let maybeAddToHsyGroups = async function(m:Message):Promise<Boolean> {
     } else {
       await logger.info(`Start to add ${contact} to room ${groupToAdd}.`);
       await HsyBotLogger.logBotAddToGroupEvent(contact, groupType);
-      await m.say(`好的，你要加${HsyGroupEnum[groupToAdd]}的群对吧，我这就拉你进群。`);
+      await m.say(`好的，你要加${getStringFromHsyGroupEnum(groupToAdd)}的群对吧，我这就拉你进群。`);
       if (await HsyUtil.isHsyBlacklisted(m.from())) {
         logger.info(`黑名单用户 ${WeChatyApiX.contactToStringLong(m.from())}申请加入${groupToAdd}`);
         await m.say(`我找找啊`);
@@ -347,9 +348,10 @@ let maybeAdminCommand = async function(m:Message) {
     let teamGroup = await HsyUtil.findHsyBigTeamRoom();
     if (/状态/.test(m.content())) {
       logger.info(`管理员${WeChatyApiX.contactToStringLong(admin)} says a command 状态.`);
+      await teamGroup.say(`应${WeChatyApiX.contactToStringLong(admin)}的要求，` +
+          `开始回报好室友系列群的状态，生成报告中....`);
       let friends = await Contact.findAll();
-      let report = `向大家报告一下好室友的状态\n` +
-          `好室友小助手好友总数 = ${friends.length}\n`;
+      let report = `好室友小助手好友总数 = ${friends.length}\n`;
       for (let groupKey in GROUP_DICT) {
         let group = await HsyUtil.findHsyRoomByKey(groupKey);
         report += `微信群 ${group.topic()} 里面的人数为${group.memberList().length}\n`;

@@ -114,9 +114,9 @@ export class HsyUtil {
   public static getAddGroupIndentFromMessage = function(
       content:string):HsyGroupEnum {
     if (/南湾西|Mountain View|mtv|sv|Sunnyvale|Palo Alto|Stanford|Facebook|Google|Menlo Park/.test(content)) {
-      return HsyGroupEnum.SouthBayEast;
-    } else if (/南湾东|Milpitas|San Jose|Santa Clara|SJ|Campbell|Los Gatos/.test(content)) {
       return HsyGroupEnum.SouthBayWest;
+    } else if (/南湾东|Milpitas|San Jose|Santa Clara|SJ|Campbell|Los Gatos/.test(content)) {
+      return HsyGroupEnum.SouthBayEast;
     } else if (/东湾|奥克兰|伯克利|Berkeley|Fremont|Hayward|Newark/.test(content)) {
       return HsyGroupEnum.EastBay;
     } else if (/(中)半岛|Redwood|San Carlos|San Mateo|Burlingame|Millbrae|San Bruno/.test(content)) {
