@@ -14,7 +14,7 @@ const groupDownSizeTriggerThreshold = 480;
 
 import {
   hsyGroupClearMsg, hsyCannotUnderstandMsg, hysAlreadyAddedMsg,
-  hsyGroupNickNameMsg, greetingsMsg, GLOBAL_blackListCandidates
+  hsyGroupNickNameMsg, greetingsMsg, GLOBAL_blackListCandidates, GROUP_DICT
 } from "../global";
 import {HsyGroupEnum} from "../model";
 
@@ -44,6 +44,7 @@ exports = module.exports = async function onMessage(m) {
   }
 
   await maybeBlacklistUser(m) || // if true stops further processing
+  await maybeAdminCommand(m) || // if true stops further processing
   await maybeAddToHsyGroups(m) || // if true stops further processing
   await maybeExtractPostingMessage(m);
 };
@@ -338,4 +339,26 @@ let maybeCreateUser = async function(m:Message):Promise<string /*userId*/ > {
   await q.setHsyUser(user);
   logger.info(`User of uid:${uid} created/updated: ${JSON.stringify(user)}`);
   return uid;
+};
+
+let maybeAdminCommand = async function(m:Message) {
+  if (WeChatyApiX.isTalkingToMePrivately(m) && await HsyUtil.isHsyAdmin(m.from())) {
+    let admin = m.from();
+    let teamGroup = await HsyUtil.findHsyBigTeamRoom();
+    if (/状态/.test(m.content())) {
+      logger.info(`管理员${WeChatyApiX.contactToStringLong(admin)} says a command 状态.`);
+      let friends = await Contact.findAll();
+      let report = `向大家报告一下好室友的状态\n` +
+          `好室友小助手好友总数 = ${friends.length}\n`;
+      for (let groupKey in GROUP_DICT) {
+        let group = await HsyUtil.findHsyRoomByKey(groupKey);
+        report += `微信群 ${group.topic()} 里面的人数为${group.memberList().length}\n`;
+      }
+      report += `汇报完毕\n`;
+      await teamGroup.say(report);
+      await m.from().say(report);
+      return true;
+    }
+  }
+  return false;
 };
