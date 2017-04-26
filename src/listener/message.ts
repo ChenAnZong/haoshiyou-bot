@@ -14,8 +14,8 @@ const groupDownSizeTriggerThreshold = 480;
 
 import {
   hsyGroupClearMsg, hsyCannotUnderstandMsg, hysAlreadyAddedMsg,
-  hsyGroupNickNameMsg, greetingsMsg, GLOBAL_blackListCandidates, GROUP_DICT,
-  getStringFromHsyGroupEnum
+  hsyGroupNickNameMsg, greetingsMsg, GLOBAL_blackListCandidates,
+  getStringFromHsyGroupEnum, ALL_HSY_GROUP_ENUMS
 } from "../global";
 import {HsyGroupEnum} from "../model";
 
@@ -345,22 +345,30 @@ let maybeCreateUser = async function(m:Message):Promise<string /*userId*/ > {
 let maybeAdminCommand = async function(m:Message) {
   if (WeChatyApiX.isTalkingToMePrivately(m) && await HsyUtil.isHsyAdmin(m.from())) {
     let admin = m.from();
-    let teamGroup = await HsyUtil.findHsyBigTeamRoom();
     if (/状态/.test(m.content())) {
       logger.info(`管理员${WeChatyApiX.contactToStringLong(admin)} says a command 状态.`);
-      await teamGroup.say(`应${WeChatyApiX.contactToStringLong(admin)}的要求，` +
+      await admin.say(`应${WeChatyApiX.contactToStringLong(admin)}的要求，` +
           `开始回报好室友系列群的状态，生成报告中....`);
       let friends = await Contact.findAll();
-      let report = `好室友小助手好友总数 = ${friends.length}\n`;
-      for (let groupKey in GROUP_DICT) {
-        let group = await HsyUtil.findHsyRoomByKey(groupKey);
-        report += `微信群 ${group.topic()} 里面的人数为${group.memberList().length}\n`;
-      }
-      report += `汇报完毕\n`;
-      await teamGroup.say(report);
-      await m.from().say(report);
+      let reportStr = `好室友小助手好友总数 = ${friends.length}\n`;
+      let reports:Object[] = await Promise.all(
+          ALL_HSY_GROUP_ENUMS.map(async (hsyGroupEnum:HsyGroupEnum):Promise<Object> => {
+            logger.info(`生成了${getStringFromHsyGroupEnum(hsyGroupEnum)}的信息`);
+        return {
+          group: getStringFromHsyGroupEnum(hsyGroupEnum),
+          length: (await HsyUtil.findHsyRoomByEnum(hsyGroupEnum)).memberList().length
+        };
+      }));
+      reports.forEach(report => {
+        reportStr += `微信群 ${report['group']} 里面的人数为${report['length']}\n`;
+      });
+      reportStr += `汇报完毕\n`;
+      await admin.say(reportStr);
       return true;
     }
   }
   return false;
 };
+
+
+

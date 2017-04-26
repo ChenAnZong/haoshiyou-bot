@@ -6,6 +6,7 @@ export let GLOBAL_blackListCandidates = {
 
 // TODO(zzn): use a BiMap instead
 export const GROUP_DICT = {
+    "三番":HsyGroupEnum.SanFrancisco,
     "南湾西":HsyGroupEnum.SouthBayWest,
     "南湾东":HsyGroupEnum.SouthBayEast,
     "东湾":HsyGroupEnum.EastBay,
@@ -16,6 +17,19 @@ export const GROUP_DICT = {
     "老友":HsyGroupEnum.OldFriends,
     "大军团": HsyGroupEnum.BigTeam
 };
+
+export const ALL_HSY_GROUP_ENUMS:Array<any> = [
+    HsyGroupEnum.SanFrancisco,
+    HsyGroupEnum.SouthBayWest,
+    HsyGroupEnum.SouthBayEast,
+    HsyGroupEnum.EastBay,
+    HsyGroupEnum.MidPeninsula,
+    HsyGroupEnum.Seattle,
+    HsyGroupEnum.ShortTerm,
+    HsyGroupEnum.TestGroup,
+    HsyGroupEnum.OldFriends,
+    HsyGroupEnum.BigTeam
+];
 
 export let getStringFromHsyGroupEnum = function(input:HsyGroupEnum):string {
   for (let key in GROUP_DICT) {
