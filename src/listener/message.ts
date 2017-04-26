@@ -32,10 +32,12 @@ if (process.env.CLOUDINARY_SECRET !== undefined && process.env.CLOUDINARY_SECRET
 }
 
 exports = module.exports = async function onMessage(m) {
-  await HsyBotLogger.logRawChatMsg(m);
-  if (!HsyUtil.shouldCareAboutMessage(m)) return; // We don't care
-
   logger.trace(`Got a msg type: ${m.type()}`);
+  HsyBotLogger.logRawChatMsg(m).then(() => {/* does nothing, not waiting*/});
+  if (!HsyUtil.shouldCareAboutMessage(m)) {
+    return;
+  } // We don't care
+
   if (await HsyUtil.isHsyAdmin(m.from())) {
     logger.info(`A message from Admin`);
   } else if (await HsyUtil.isHsyBlacklisted(m.from())) {
