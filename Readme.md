@@ -12,6 +12,12 @@ To start running in a docker
 docker run --env CLOUDINARY_SECRET=$CLOUDINARY_SECRET -ti --volume="$(pwd)":/bot --rm zixia/wechaty src/main.ts
 ```
 
+## Update Docker
+```bash
+brew unlink yarn
+brew install yarn
+docker pull zixia/wechaty
+```
 
 Query server link
 
