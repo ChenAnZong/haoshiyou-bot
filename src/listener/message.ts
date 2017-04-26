@@ -270,7 +270,6 @@ let maybeAddToHsyGroups = async function(m:Message):Promise<Boolean> {
   const contact = m.from();
   const content = m.content();
   const room = m.room();
-  let groupType:HsyGroupEnum;
   // only to me or entry group
   if (WeChatyApiX.isTalkingToMePrivately(m) || /好室友.*入口群/.test(m.room().topic())) {
     logger.debug(`${contact.name()}(weixin:${contact.weixin()}) sent a message ` +
@@ -287,7 +286,7 @@ let maybeAddToHsyGroups = async function(m:Message):Promise<Boolean> {
       await m.say(hsyCannotUnderstandMsg);
     } else {
       await logger.info(`Start to add ${contact} to room ${groupToAdd}.`);
-      await HsyBotLogger.logBotAddToGroupEvent(contact, groupType);
+      await HsyBotLogger.logBotAddToGroupEvent(contact, groupToAdd);
       await m.say(`好的，你要加${getStringFromHsyGroupEnum(groupToAdd)}的群对吧，我这就拉你进群。`);
       if (await HsyUtil.isHsyBlacklisted(m.from())) {
         logger.info(`黑名单用户 ${WeChatyApiX.contactToStringLong(m.from())}申请加入${groupToAdd}`);
@@ -356,9 +355,13 @@ let maybeAdminCommand = async function(m:Message) {
       let reports:Object[] = await Promise.all(
           ALL_HSY_GROUP_ENUMS.map(async (hsyGroupEnum:HsyGroupEnum):Promise<Object> => {
             logger.info(`生成了${getStringFromHsyGroupEnum(hsyGroupEnum)}的信息`);
-        return {
+            let room = await HsyUtil.findHsyRoomByEnum(hsyGroupEnum);
+            if (room === null) {
+              logger.warn(`Failed to get room for ${hsyGroupEnum}:${HsyGroupEnum[hsyGroupEnum]}`);
+              return {group: getStringFromHsyGroupEnum(hsyGroupEnum), length: '-1'};
+            } else return {
           group: getStringFromHsyGroupEnum(hsyGroupEnum),
-          length: (await HsyUtil.findHsyRoomByEnum(hsyGroupEnum)).memberList().length
+          length: (room.memberList().length)
         };
       }));
       reports.forEach(report => {

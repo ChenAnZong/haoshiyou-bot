@@ -8,6 +8,7 @@ node_modules
 log.json
 potential-posting.json
 .cache
+.cache.bak
 .yarnrc
 .yarn
 .config
