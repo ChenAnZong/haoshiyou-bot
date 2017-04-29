@@ -3,5 +3,5 @@ import {Contact, Room} from "wechaty";
 const logger = Logger.getLogger(`main`);
 
 exports = module.exports = async function onRoomLeave(room:Room, leaverList: Contact[]) {
-  logger.debug(`the room ${room.topic()}, ${leaverList} left the room`);
+  logger.info(`the room ${room.topic()}, ${leaverList} left the room`);
 };

@@ -1,5 +1,9 @@
 import {Contact} from "wechaty/dist/src/contact";
+import { Logger, LoggerConfig } from "log4ts";
+
+const logger = Logger.getLogger(`logout`);
+
 exports = module.exports = async function onLogOut(user:Contact) {
-  console.log('On LogOut Event!');
-  console.log(`user ${user} logout`)
+  logger.trace('On LogOut Event!');
+  logger.info(`user ${user} logout`)
 };

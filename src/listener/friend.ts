@@ -5,7 +5,7 @@ import {Contact} from "wechaty";
 import {HsyUtil} from "../hsy-util";
 import {HsyBotLogger} from "../datastore";
 
-const logger = Logger.getLogger(`main`);
+const logger = Logger.getLogger(`friend`);
 
 exports = module.exports = async function onFriend(contact, request) {
   if (request) {  // 1. request to be friend from new contact
