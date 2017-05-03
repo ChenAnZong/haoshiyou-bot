@@ -370,6 +370,17 @@ let maybeAdminCommand = async function(m:Message) {
       reportStr += `汇报完毕\n`;
       await admin.say(reportStr);
       return true;
+    } else {
+      await admin.say(
+`管理员${admin.name()}你好，感谢你的辛勤劳动，群友们都感谢你！
+以下是管理员命令(咒语):
+1. 跟小助手私下说：
+  "状态"：将返回小助手和微信群的状态
+2. 在咱们好室友的群里面对人说话
+  "@张三 请不要发无关消息"或者"@张三 请按要求修改群昵称"：将触发小助手重复你的话并私信你寻求黑名单指令
+  
+管理员辛苦啦~，更多小助手功能敬请期待。或者如果你想要什么功能，在大军团里面说一声吧~!
+`);
     }
   }
   return false;

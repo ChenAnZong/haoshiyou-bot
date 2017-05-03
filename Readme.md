@@ -50,10 +50,11 @@ Or http://haoshiyou-server-dev.herokuapp.com/api/HsyListings?filter={%22where%22
   - [X] Add information about area and type
   - [X] Post to Haoshiyou-Server
   - [ ] Store Contact's Avatar, stably
+  - [ ] Design some admin's commandline
 
 * Advance function
   - [ ] Extract time, price, type from a list post
-  - [ ] Based on conversation session state, etract photos posted followed 
+  - [ ] Based on conversation session state, extract photos posted followed 
         by the previous post.
   - [ ] Post to Haoshiyou-Server with extracted information, and create account.
 
