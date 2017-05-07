@@ -15,7 +15,7 @@ const groupDownSizeTriggerThreshold = 480;
 import {
   hsyGroupClearMsg, hsyCannotUnderstandMsg, hysAlreadyAddedMsg,
   hsyGroupNickNameMsg, greetingsMsg, GLOBAL_blackListCandidates,
-  getStringFromHsyGroupEnum, ALL_HSY_GROUP_ENUMS
+  getStringFromHsyGroupEnum, ALL_HSY_GROUP_ENUMS, hsyReferMsg
 } from "../global";
 import {HsyGroupEnum} from "../model";
 
@@ -69,13 +69,19 @@ let savePic = async function(filename:string, picStream:NodeJS.ReadableStream):P
     stream.pipe(fileStream)
         .on('close', () => {
           logger.trace('finish readyStream()');
-          cloudinary.uploader.upload(filename, function(result, error) {
+          cloudinary.v2.uploader.upload(filename, {
+            transformation: [
+              {quality:`auto:eco`, crop:`limit`, width: `1080`, height: `4000`}
+            ],
+            format: 'jpg'
+          }, function(error, result) {
             if (error) {
+              logger.warn(`error = ${JSON.stringify(error)}`);
               logger.warn(`There is an error in saveMediaFile upload of cloudinary`);
-              logger.warn(error);
               reject(error);
             } else {
-              logger.trace(`Uploaded an image:` + JSON.stringify(result));
+              logger.trace(`Uploaded an image: ${JSON.stringify(result)}, size = ${result.bytes}`);
+              let id = result.public_id;
               resolve(result.public_id);
             }
           });
@@ -256,7 +262,7 @@ let maybeDownsizeKeyRoom = async function(keyRoom: Room, c:Contact) {
               `待得比较久了，如果你已经在群里找到室友或者房子，恭喜你！`  +
               `请联系群主 周载南（微信号xinbenlv）加入"老友群"，` :
               `没有按照规则修改群昵称，`) +
-          `这里我先把你挪出本群哈，随时加我（小助手，微信号haoshiyou-admin）重新入群。`;
+          `这里我先把你挪出本群哈，随时加我（小助手，微信号haoshiyou-admin）重新入群。` + hsyReferMsg;
       await c.say(msg);
       await keyRoom.del(c);
     }));
