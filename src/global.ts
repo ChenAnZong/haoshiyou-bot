@@ -41,9 +41,9 @@ export let getStringFromHsyGroupEnum = function(input:HsyGroupEnum):string {
 export const hsyReferMsg = `
 另外，用户在我们系列微信群里发布的招租求租信息将自动同时发布到我们的网站和app。
 欢迎尝试：
-  网站: haoshiyou.org(http://haoshiyou.org/?hsy_referer=hsybot)
-  Android: http://android.haoshiyou.org
-  iPhone: http://ios.haoshiyou.org
+  网站: http://haoshiyou.org/?referrer=hsybot
+  安卓版: http://android.haoshiyou.org/?referrer=hsybot
+  iPhone版: http://ios.haoshiyou.org/?referrer=hsybot
 `;
 
 export const greetingsMsg =
