@@ -38,6 +38,14 @@ export let getStringFromHsyGroupEnum = function(input:HsyGroupEnum):string {
   return null;
 };
 
+export const hsyReferMsg = `
+另外，用户在我们系列微信群里发布的招租求租信息将自动同时发布到我们的网站和app。
+欢迎尝试：
+  网站: haoshiyou.org(http://haoshiyou.org/?hsy_referer=hsybot)
+  Android: http://android.haoshiyou.org
+  iPhone: http://ios.haoshiyou.org
+`;
+
 export const greetingsMsg =
     `你好，谢谢你加我们群，请问你要在哪个区域找房子或者室友？\n` +
     `我们是按照区域分群的。我拉你入群：\n` +
@@ -75,15 +83,17 @@ export const hsyGroupNickNameMsg = `
   FMNT - Fremont,  
   SJ - San Jose,
   MPTS - Milpitas,
+  BKL - Berkeley
   SEA - Seattle
   KIR - Kirkland
   
 好室友系列租房群会自动定期清理没有修改群昵称的群友，以及最早的群友以便给新人腾位置。
-`;
+如果你被清理出去了也别担心，随时加好室友小助手(WeChat:haoshiyou-admin)。
+` + hsyReferMsg;
 
-export const hsyGroupClearMsg =
-    `亲爱的各位好室友租房群的群友们，现在群快满了，清理一批群友给新朋友们腾位置。\n` +
-    `我们主要清理两类朋友：\n` +
-    `  1. 没有按照改群昵称的朋友，如果你的群昵称不是以'招'、'求'、'介'开头，那么你可能会被优先清理；\n` +
-    `  2. 如果你的入群时间比较长，那么我们会请你优先离群，把空位流动起来（可以重新回来）；\n` +
-    `若仍有需求，欢迎私信好室友小助手（微信号：haoshiyou-admin）重新加群哈~\n`;
+export const hsyGroupClearMsg = `亲爱的各位好室友租房群的群友们，现在群快满了，清理一批群友给新朋友们腾位置。
+我们主要清理两类朋友：
+1. 没有按照改群昵称的朋友，如果你的群昵称不是以'招'、'求'、'介'开头，那么你可能会被优先清理；
+2. 如果你的入群时间比较长，那么我们会请你优先离群，把空位流动起来（可以重新回来）；
+若仍有需求，欢迎私信好室友小助手（微信号：haoshiyou-admin）重新加群哈~\n
+` + hsyReferMsg;

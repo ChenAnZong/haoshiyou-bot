@@ -194,7 +194,7 @@ let maybeBlacklistUser = async function(m: Message):Promise<Boolean> {
  */
 let maybeExtractPostingMessage = async function(m:Message):Promise<Boolean> {
   if (WeChatyApiX.isTalkingToMePrivately(m) || /好室友/.test(m.room().topic())) {
-    // await maybeCreateUser(m);
+    await maybeCreateUser(m);
     if (m.type() == MsgType.IMAGE) {
       logger.info(`${m.from().name()} sent an image.`);
       let publicId = await saveImgFileFromMsg(m);
@@ -336,7 +336,7 @@ let maybeCreateUser = async function(m:Message):Promise<string /*userId*/ > {
   }
 
   // TODO(zzn): avatar is sometimes currently empty file
-  user.avatarId = await savePic('tmp/img/' + c.name() + '.jpg', await c.avatar());
+  // user.avatarId = await savePic('tmp/img/' + c.name() + '.jpg', await c.avatar());
   user.lastUpdated = new Date();
   await q.setHsyUser(user);
   logger.info(`User of uid:${uid} created/updated: ${JSON.stringify(user)}`);

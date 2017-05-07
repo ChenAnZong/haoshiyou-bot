@@ -79,8 +79,10 @@ export class HsyBotLogger {
     hsyListing.uid = HsyUtil.getHsyUserIdFromName(c.name());
     hsyListing.content = m.content();
     hsyListing.listingTypeEnum = HsyListingTypeEnum[
-        /求/.test(m.content()) ? HsyListingTypeEnum.NeedRoom : HsyListingTypeEnum.NeedRoommate
+        /求租/.test(m.content()) ? HsyListingTypeEnum.NeedRoom : HsyListingTypeEnum.NeedRoommate
     ];
+    hsyListing.type = hsyListing.listingTypeEnum
+        == HsyListingTypeEnum[HsyListingTypeEnum.NeedRoom] ? 1 : 0;
     hsyListing.title = m.content().slice(0, 25);
     hsyListing.hsyGroupEnum = HsyGroupEnum[hsyGroupEnum];
     hsyListing.wechatId = m.from().weixin();
