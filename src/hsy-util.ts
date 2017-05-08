@@ -83,7 +83,7 @@ export class HsyUtil {
       logger.trace(`试图把管理员加入黑名单，${WeChatyApiX.contactToStringLong(contact)}...`);
     } else {
       logger.trace(`正在把用户加入黑名单，${WeChatyApiX.contactToStringLong(contact)}...`);
-      await contact.remark(contact.name().slice(0, 5)/*in case too long of name*/ + '#黑名单');
+      await contact.alias(contact.name().slice(0, 5)/*in case too long of name*/ + '#黑名单');
     }
   };
 
@@ -108,7 +108,7 @@ export class HsyUtil {
         (
             WeChatyApiX.isTalkingToMePrivately(message) ||
             HsyUtil.getHsyGroupEnum(message.room().topic()) != HsyGroupEnum.None
-        );
+        ) && !/开启了朋友验证/.test(message.content())
   };
 
   public static getAddGroupIndentFromMessage = function(

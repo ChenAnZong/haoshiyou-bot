@@ -309,6 +309,7 @@ let maybeAddToHsyGroups = async function(m:Message):Promise<Boolean> {
         await keyRoom.add(contact);
         await contact.say(hysAlreadyAddedMsg);
         await contact.say(hsyGroupNickNameMsg);
+        await contact.say(hsyReferMsg);
       } else {
         await m.say(`囧...加群失败，请联系群主周载南(微信号:xinbenlv)。`);
         logger.info(`Can't find group ${groupToAdd}`);

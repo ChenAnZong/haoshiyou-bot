@@ -67,17 +67,14 @@ export const hysAlreadyAddedMsg = `已邀请，请点击加入[湾区好室友]�
 
 export const hsyGroupNickNameMsg = `
  
-提醒一下小伙伴记得按照要求修改群昵称哦，格式为“求/招-区域-时间-全真名”，
-例如 "求-SV-3月-王小明"表示你是王小明，求租3月在Sunnyvale附近的房子。
 请大家把昵称改为如下格式：“招/求/-地点-时间-真全名”，例如:
  
 “招-mtv-5/1-王小明”表示你是王小明，招租房客，房子地点在 Mountain View，时间5月1日开始。 
 “求-pa-4/12-韩梅梅”表示你是韩梅梅，求租房子，房子地点在 Palo Alto，时间4月1日开始。 
-“介-李雷”表示你是李雷，在群里目前没有需求，仅为了介绍朋友进群。“介”这类可以不写时间地点。 
-
+“介-李雷”表示你是李雷，在群里目前没有需求，仅为了介绍朋友进群。“介”这类可以不写时间地点。
 本群中对地点常用缩写约定如下：
-  SF - San Francisco,  
-  PA - Palo Alto,  
+
+  SF - San Francisco, PA - Palo Alto,  
   MTV - Mountain View,  
   SV - Sunnyvale,  
   FMNT - Fremont,  
@@ -86,10 +83,9 @@ export const hsyGroupNickNameMsg = `
   BKL - Berkeley
   SEA - Seattle
   KIR - Kirkland
-  
+
 好室友系列租房群会自动定期清理没有修改群昵称的群友，以及最早的群友以便给新人腾位置。
-如果你被清理出去了也别担心，随时加好室友小助手(WeChat:haoshiyou-admin)。
-` + hsyReferMsg;
+如果你被清理出去了也别担心，随时加好室友小助手(WeChat:haoshiyou-admin)。`;
 
 export const hsyGroupClearMsg = `亲爱的各位好室友租房群的群友们，现在群快满了，清理一批群友给新朋友们腾位置。
 我们主要清理两类朋友：
