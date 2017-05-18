@@ -5,6 +5,7 @@ import {LoopbackQuerier} from "./loopback-querier";
 import { Logger, LoggerConfig } from "log4ts";
 import {HsyUtil} from "./hsy-util";
 import {HsyBotLoggerType, HsyGroupEnum, HsyListingTypeEnum} from "./model";
+import {getStringFromHsyGroupEnum} from "./global";
 
 const file = 'log.json';
 const fileListings = 'potential-posting.json';
@@ -73,17 +74,18 @@ export class HsyBotLogger {
       content: m.content()
     };
 
+    let cleanContent = HsyUtil.extractCleanContent(m.content());
     let hsyListing:HsyListing = new HsyListing();
     hsyListing.ownerId = HsyUtil.getHsyUserIdFromName(c.name());
     hsyListing.lastUpdated = new Date();
     hsyListing.uid = HsyUtil.getHsyUserIdFromName(c.name());
-    hsyListing.content = m.content();
+    hsyListing.content = cleanContent;
     hsyListing.listingTypeEnum = HsyListingTypeEnum[
         /求租/.test(m.content()) ? HsyListingTypeEnum.NeedRoom : HsyListingTypeEnum.NeedRoommate
     ];
     hsyListing.type = hsyListing.listingTypeEnum
         == HsyListingTypeEnum[HsyListingTypeEnum.NeedRoom] ? 1 : 0;
-    hsyListing.title = m.content().slice(0, 25);
+    hsyListing.title = cleanContent.slice(0, 25);
     hsyListing.hsyGroupEnum = HsyGroupEnum[hsyGroupEnum];
     hsyListing.wechatId = m.from().weixin();
     await HsyBotLogger.lq.setHsyListing(hsyListing);
@@ -96,12 +98,16 @@ export class HsyBotLogger {
     let uid = HsyUtil.getHsyUserIdFromName(c.name());
     let hsyListing:HsyListing = await HsyBotLogger.lq.getHsyListingByUid(uid);
     if (hsyListing === undefined || hsyListing === null) {
+      let content = `${getStringFromHsyGroupEnum(hsyGroupEnum)}招租，详情见图片`;
       // create new listing
       hsyListing = new HsyListing();
       hsyListing.ownerId = HsyUtil.getHsyUserIdFromName(c.name());
       hsyListing.uid = uid;
       hsyListing.listingTypeEnum = HsyListingTypeEnum[HsyListingTypeEnum.NeedRoommate];
-      hsyListing.title = m.content().slice(0, 25);
+      hsyListing.type = hsyListing.listingTypeEnum
+          == HsyListingTypeEnum[HsyListingTypeEnum.NeedRoom] ? 1 : 0;
+      hsyListing.title = content;
+      hsyListing.content = content;
       hsyListing.hsyGroupEnum = HsyGroupEnum[hsyGroupEnum];
       hsyListing.wechatId = m.from().weixin();
       hsyListing.imageIds = [imagePublicId];

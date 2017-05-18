@@ -29,7 +29,7 @@ export class HsyUtil {
     if (!c.isReady()) {
       await c.refresh();
     }
-    return /#管理员$/.test(c.alias());
+    return /#管理员/.test(c.alias());
   };
 
   public static isHsyGroup = function(topic:string) {
@@ -86,6 +86,11 @@ export class HsyUtil {
       await contact.alias(contact.name().slice(0, 5)/*in case too long of name*/ + '#黑名单');
     }
   };
+
+  public static extractCleanContent(rawContent) {
+    let content = rawContent.replace(/<br\/>/g, '\n');
+    return content.replace(/<img((?:[\s\S](?!<img))+?)\/>/g,'');
+  }
 
   public static kickFromAllHsyGroups = async function(contact:Contact) {
     if (await HsyUtil.isHsyAdmin(contact)) {
