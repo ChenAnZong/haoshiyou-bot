@@ -18,6 +18,7 @@ import {
   getStringFromHsyGroupEnum, ALL_HSY_GROUP_ENUMS, hsyReferMsg
 } from "../global";
 import {HsyGroupEnum} from "../model";
+import {escape} from "querystring";
 
 if (process.env.CLOUDINARY_SECRET !== undefined && process.env.CLOUDINARY_SECRET.length > 0) {
   cloudinary.config({
@@ -207,17 +208,30 @@ let maybeExtractPostingMessage = async function(m:Message):Promise<Boolean> {
       logger.info(
           `Uploaded image ${publicId} to cloudinary, now update the database, in group` +
           `${HsyUtil.getHsyGroupEnum(m.room().topic())}`);
-      await HsyBotLogger.logListingImage(m, HsyUtil.getHsyGroupEnum(m.room().topic()), publicId);
+      let uid = await HsyBotLogger.logListingImage(m,
+          HsyUtil.getHsyGroupEnum(m.room().topic()), publicId);
+      await m.from().say(`你好，你${
+          WeChatyApiX.isTalkingToMePrivately(m) ? '私下' : `在${m.room().topic()} 里面`}
+        发的租房图片我们已经同时发布到好室友™网站和App上了，链接为 ${hsyListingToLink(uid)} 欢迎查看和分享`);
     } else {
       logger.info(`${m.from().name()} say: ${m.content()}`);
       if (m.content().length >= 80 &&
           /租|rent|roomate|小区|公寓|lease/.test(m.content())) {
-        await HsyBotLogger.logListing(m, HsyUtil.getHsyGroupEnum(m.room().topic()));
+        let uid = await HsyBotLogger.logListing(m, HsyUtil.getHsyGroupEnum(m.room().topic()));
+        await m.from().say(`你好，你${
+            WeChatyApiX.isTalkingToMePrivately(m) ? '私下' : `在${m.room().topic()} 里面`}
+        发的租房信息我们已经同时发布到好室友™网站和App上了，链接为 ${hsyListingToLink(uid)} 欢迎查看和分享`);
       }
     }
     return true;
   }
+  return false;
 };
+
+// TODO(zzn): move to HsyUtil
+let hsyListingToLink = function(uid:string) {
+  return `http://www.haoshiyou.org/#/listing/${escape(uid)}?referrer=hsybot-realtime-generation`;
+}
 
 let maybeDownsizeKeyRoom = async function(keyRoom: Room, c:Contact) {
   if (/老友/.test(keyRoom.topic())) return;

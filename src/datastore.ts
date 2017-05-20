@@ -66,7 +66,7 @@ export class HsyBotLogger {
     await this.log(logItem);
   }
 
-  public static async logListing(m:Message, hsyGroupEnum:HsyGroupEnum) {
+  public static async logListing(m:Message, hsyGroupEnum:HsyGroupEnum):Promise<string/*uid*/> {
     let c:Contact = m.from();
     let listing = {
       contact: c.name(),
@@ -91,9 +91,11 @@ export class HsyBotLogger {
     await HsyBotLogger.lq.setHsyListing(hsyListing);
     HsyBotLogger.logger.debug(`Successfully stored ${JSON.stringify(hsyListing)}`);
     await jsonfile.writeFileSync(fileListings, listing, {flag: 'a'});
+    return hsyListing.uid;
   }
 
-  public static async logListingImage(m:Message, hsyGroupEnum:HsyGroupEnum, imagePublicId:string) {
+  public static async logListingImage(
+      m:Message, hsyGroupEnum:HsyGroupEnum, imagePublicId:string):Promise<string/*uid*/> {
     let c:Contact = m.from();
     let uid = HsyUtil.getHsyUserIdFromName(c.name());
     let hsyListing:HsyListing = await HsyBotLogger.lq.getHsyListingByUid(uid);
@@ -121,6 +123,6 @@ export class HsyBotLogger {
 
     HsyBotLogger.logger.debug(`Done updating image ${imagePublicId} for contact ${uid}`);
     HsyBotLogger.logger.debug(`updatedHsyListing = ${JSON.stringify(updatedHsyListing)}`);
-    return updatedHsyListing;
+    return hsyListing.uid;
   }
 }
