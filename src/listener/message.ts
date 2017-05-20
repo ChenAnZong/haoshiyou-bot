@@ -212,7 +212,7 @@ let maybeExtractPostingMessage = async function(m:Message):Promise<Boolean> {
           HsyUtil.getHsyGroupEnum(m.room().topic()), publicId);
       await m.from().say(`你好，你${
           WeChatyApiX.isTalkingToMePrivately(m) ? '私下' : `在${m.room().topic()} 里面`}
-        发的租房图片我们已经同时发布到好室友™网站和App上了，链接为 ${hsyListingToLink(uid)} 欢迎查看和分享`);
+        发的租房图片我们已经同时发布到好室友™网站和App上了，欢迎查看和分享，链接为 ${hsyListingToLink(uid)}`);
     } else {
       logger.info(`${m.from().name()} say: ${m.content()}`);
       if (m.content().length >= 80 &&
@@ -220,7 +220,7 @@ let maybeExtractPostingMessage = async function(m:Message):Promise<Boolean> {
         let uid = await HsyBotLogger.logListing(m, HsyUtil.getHsyGroupEnum(m.room().topic()));
         await m.from().say(`你好，你${
             WeChatyApiX.isTalkingToMePrivately(m) ? '私下' : `在${m.room().topic()} 里面`}
-        发的租房信息我们已经同时发布到好室友™网站和App上了，链接为 ${hsyListingToLink(uid)} 欢迎查看和分享`);
+        发的租房信息我们已经同时发布到好室友™网站和App上了，欢迎查看和分享，链接为 ${hsyListingToLink(uid)}`);
       }
     }
     return true;
