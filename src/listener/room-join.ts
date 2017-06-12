@@ -43,7 +43,8 @@ let maybeRemoveBlacklistInviteeAndInviter = async function(
   }
 };
 let sendWelcomeMessage = async function(room:Room, inviteeList:Contact[], inviter:Contact) {
+  let areaEnum = HsyUtil.getHsyGroupEnum(room.topic());
   let msg = `欢迎新群友${inviteeList.map(c=>`@${c.name()}${magicChar}`).join(',')}入群，
-想查看入群之前的帖子，点此 http://www.haoshiyou.org/?referrer=hsybot-welcome-msg`;
+想查看入群之前的帖子，点此 http://www.haoshiyou.org/?area=${HsyGroupEnum[areaEnum]}&referrer=hsybot-welcome-msg`;
   await room.say(msg);
 };
