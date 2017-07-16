@@ -391,12 +391,82 @@ let maybeAdminCommand = async function(m:Message) {
       reportStr += `汇报完毕\n`;
       await admin.say(reportStr);
       return true;
+    } else if (/^列出/.test(m.content())) {
+      console.log(`XXXX 列出列出！`);
+      try {
+        let splitted = m.content().split(' ');
+        // TODO(zzn): assert splitted.lenght == 4;
+        let groupShortName = splitted[1];
+        let lowerBound = parseInt(splitted[2]);
+        let upperBound = parseInt(splitted[3]);
+        // TODO(zzn): assert lowerBound and upperBound is number and lowerBound < upperBound
+        let groupEnum = HsyUtil.getAddGroupIndentFromMessage(groupShortName);
+        // TODO(zzn): assert group can be found
+        let group = await HsyUtil.findHsyRoomByEnum(groupEnum);
+        let groupMemberList = group.memberList();
+        // TODO(zzn): assert lowerBound >= 0, assert upperBound <= groupMemberList.length
+        let memberListSliceToDisplay = groupMemberList.slice(lowerBound, upperBound);
+        let responseBuffer = '';
+        for (let i = 0; i < memberListSliceToDisplay.length; i++) {
+          let member = memberListSliceToDisplay[i];
+          responseBuffer += `${i + lowerBound}. ${WeChatyApiX.contactToStringLong(member)} \n`;
+        }
+
+        responseBuffer += `\n
+
+回复
+- "踢 [群短名] [num]": 会把特定租房群里面的群友踢出去并在群内警告
+- "加黑 [群短名] [num]": 会把特定租房群里面的群友踢出去、加黑名单并在群内警告
+`;
+        await admin.say(responseBuffer);
+      } catch (e) {
+        await admin.say(`发生错误: ${e}`);
+      }
+      return true;
+    } else if (/^踢/.test(m.content())) {
+      try {
+        let splitted = m.content().split(' ');
+        let groupShortName = splitted[1];
+        let num = parseInt(splitted[2]);
+        let groupEnum = HsyUtil.getAddGroupIndentFromMessage(groupShortName);
+        // TODO(zzn): assert group can be found
+        let group = await HsyUtil.findHsyRoomByEnum(groupEnum);
+        let groupMemberList = group.memberList();
+        let c = groupMemberList[num];
+        await HsyUtil.kickContactFromRoom(c, group);
+        await admin.say(`踢出完成：${WeChatyApiX.contactToStringLong(c)} `);
+        await group.say(`经举报，用户${c.name()}因为违反群规被从本群踢出。`);
+      } catch (e) {
+        await admin.say(`踢人命令发生错误，请检查格式和数字`);
+      }
+      return true;
+    } else if (/^加黑/.test(m.content())) {
+      try {
+        let splitted = m.content().split(' ');
+        let groupShortName = splitted[1];
+        let num = parseInt(splitted[2]);
+        let groupEnum = HsyUtil.getAddGroupIndentFromMessage(groupShortName);
+        // TODO(zzn): assert group can be found
+        let group = await HsyUtil.findHsyRoomByEnum(groupEnum);
+        let groupMemberList = group.memberList();
+        let c = groupMemberList[num];
+        await HsyUtil.kickFromAllHsyGroups(c);
+        await HsyUtil.addToBlacklist(c);
+        await admin.say(`加黑完成：${WeChatyApiX.contactToStringLong(c)} `);
+        await group.say(`经举报，用户${c.name()}因为违反群规被从本群及所有好室友系列租房群踢出。`);
+      } catch (e) {
+        await admin.say(`加黑命令发生错误，请检查格式和数字`);
+      }
+      return true;
     } else {
       await admin.say(
 `管理员${admin.name()}你好，感谢你的辛勤劳动，群友们都感谢你！
 以下是管理员命令(咒语):
 1. 跟小助手私下说：
-  "状态"：将返回小助手和微信群的状态
+- "状态"：将返回小助手和微信群的状态
+- "列出 [群短名] [lowerBound] [UpperBound]:" 将列出特定租房群里面的一些网友名称。例如 "列出 南湾西 0 9"：会列出南湾西群里的第0个到第9个网友的名称并包含序号，记得加空格
+- "踢 [群短名] [num]": 会把特定租房群里面的群友踢出去并在群内警告
+- "加黑 [群短名] [num]": 会把特定租房群里面的群友踢出去、加黑名单并在群内警告
 2. 在咱们好室友的群里面对人说话
   "@张三 请不要发无关消息"或者"@张三 请按要求修改群昵称"：将触发小助手重复你的话并私信你寻求黑名单指令
   
