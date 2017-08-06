@@ -18,7 +18,7 @@ export class HsyUtil {
     if (!c.isReady()) {
       await c.refresh();
     }
-    let result:boolean = /#黑名单$/.test(c.alias());
+    let result:boolean = /#黑名单$/.test(c.remark() as string);
     if (result) {
       logger.info(`${WeChatyApiX.contactToStringLong(c)}是黑名单用户`);
     }
@@ -29,7 +29,7 @@ export class HsyUtil {
     if (!c.isReady()) {
       await c.refresh();
     }
-    return /#管理员/.test(c.alias());
+    return /#管理员/.test(c.remark() as string);
   };
 
   public static isHsyGroup = function(topic:string) {
@@ -83,7 +83,7 @@ export class HsyUtil {
       logger.trace(`试图把管理员加入黑名单，${WeChatyApiX.contactToStringLong(contact)}...`);
     } else {
       logger.trace(`正在把用户加入黑名单，${WeChatyApiX.contactToStringLong(contact)}...`);
-      await contact.alias(contact.name().slice(0, 5)/*in case too long of name*/ + '#黑名单');
+      await contact.remark(contact.name().slice(0, 5)/*in case too long of name*/ + '#黑名单');
     }
   };
 
@@ -144,7 +144,7 @@ export class WeChatyApiX {
   public static contactToStringLong = function(c:Contact):string {
     return `` +
         (StringUtil.isNullOrUndefinedOrEmpty(c.name()) ? `无昵称` : `昵称:"${c.name()}", `) +
-        (StringUtil.isNullOrUndefinedOrEmpty(c.alias()) ? `无备注` : `备注:"${c.alias()}", `) +
+        (StringUtil.isNullOrUndefinedOrEmpty(c.remark() as string) ? `无备注` : `备注:"${c.remark() as string}", `) +
         (StringUtil.isNullOrUndefinedOrEmpty(
             WeChatyApiX.getGroupNickNameFromContact(c)) ?
             `无群昵称` : `群昵称: "${WeChatyApiX.getGroupNickNameFromContact(c)}"`);

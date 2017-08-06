@@ -55,7 +55,7 @@ exports = module.exports = async function onMessage(m) {
 
 let findMemberFromGroup = function(room:Room, regExp:RegExp):Array<Contact> {
   return room.memberList().filter(c => {
-    return regExp.test(c.name()) || regExp.test(c.alias())
+    return regExp.test(c.name()) || regExp.test(c.remark() as string)
         || regExp.test(WeChatyApiX.getGroupNickNameFromContact(c));
   });
 };
@@ -114,7 +114,7 @@ let maybeBlacklistUser = async function(m: Message):Promise<Boolean> {
   if(WeChatyApiX.isTalkingToMePrivately(m)
       && /加黑名单/.test(m.content())) {
     // find the last one being marked blacklist by this admin
-    let blackListObj = GLOBAL_blackListCandidates[admin.alias()];
+    let blackListObj = GLOBAL_blackListCandidates[admin.remark() as string];
 
     // not able to find a blacklist candidate.
     if (blackListObj === undefined || blackListObj === null) return false;
@@ -123,7 +123,7 @@ let maybeBlacklistUser = async function(m: Message):Promise<Boolean> {
       if ( timeLapsedInSeconds>  60 * 5) {
         await admin.say(`从刚才群内警告到现在确认加黑名单已经过了` +
             `${(timeLapsedInSeconds)/60}分钟，太久了，请重新警告`);
-        delete GLOBAL_blackListCandidates[m.from().alias()];
+        delete GLOBAL_blackListCandidates[m.from().remark() as string];
       } else {
         let indexOfCandidate = m.content().slice(4); //"加黑名单1"取编号
         let contactToBlacklist:Contact = blackListObj.candidates[indexOfCandidate];
@@ -172,14 +172,14 @@ let maybeBlacklistUser = async function(m: Message):Promise<Boolean> {
             `里警告了用户@${mentionName}，符合这个名称的群内的用户有：\n`;
         for (let i = 0; i < foundUsers.length; i++) {
           let candidate = foundUsers[i];
-          buffer += `${i}. 昵称:${candidate.name()}, 备注:${candidate.alias()}, ` +
+          buffer += `${i}. 昵称:${candidate.name()}, 备注:${candidate.remark()}, ` +
               `群昵称: ${WeChatyApiX.getGroupNickNameFromContact(candidate)} \n`;
         }
         buffer += `请问要不要把这个用户加黑名单？五分钟内回复 "加黑名单[数字编号]"\n`;
         buffer += `例如 "加黑名单0"，将会把${foundUsers[1]} ` +
             `加入黑名单:${WeChatyApiX.contactToStringLong(foundUsers[0])}`;
         await m.from().say(buffer);
-        GLOBAL_blackListCandidates[m.from().alias()] = {
+        GLOBAL_blackListCandidates[m.from().remark() as string] = {
           time: Date.now(),
           candidates: foundUsers
         };
@@ -244,11 +244,11 @@ let maybeDownsizeKeyRoom = async function(keyRoom: Room, c:Contact) {
     let shouldRemoveList = [];
     for (let i = 0; i < keyRoom.memberList().length - newComerSize/* never newComer */; i++) {
       let c:Contact = cList[i];
-      if (c.self()) continue; // never does anything with haoshiyou-admin itself.
+      if (c.self()) continue; // never does anything with the bot itself.
       let groupNickName = WeChatyApiX.getGroupNickNameFromContact(c);
-      if (/^(管|介|群主)-/.test(groupNickName) || /管理员/.test(c.alias())) {
+      if (/^(管|介|群主)-/.test(groupNickName) || /管理员/.test(c.remark() as string)) {
         logger.info(`略过管理员 ${c.name()}, 群里叫做 ` +
-            `${WeChatyApiX.getGroupNickNameFromContact(c)}，备注${c.alias()}`);
+            `${WeChatyApiX.getGroupNickNameFromContact(c)}，备注${c.remark()}`);
         // pass, never remove
       } else if (/^(招|求)租/.test(groupNickName)) {
         // good format, but need to rotate
@@ -276,7 +276,7 @@ let maybeDownsizeKeyRoom = async function(keyRoom: Room, c:Contact) {
               `待得比较久了，如果你已经在群里找到室友或者房子，恭喜你！`  +
               `请联系群主 周载南（微信号xinbenlv）加入"老友群"，` :
               `没有按照规则修改群昵称，`) +
-          `这里我先把你挪出本群哈，随时加我（小助手，微信号haoshiyou-admin）重新入群。` + hsyReferMsg;
+          `这里我先把你挪出本群哈，随时加我（小助手，微信号haoshiyou-bot2）重新入群。` + hsyReferMsg;
       await c.say(msg);
       await keyRoom.del(c);
     }));
