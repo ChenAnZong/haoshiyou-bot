@@ -1,7 +1,7 @@
 import {Message, Contact, Room} from "wechaty";
 import {HsyGroupEnum} from "./model";
 import Global = NodeJS.Global;
-import {GROUP_DICT, getStringFromHsyGroupEnum} from "./global";
+import {GROUP_DICT, getStringFromHsyGroupEnum, ALL_HSY_GROUP_ENUMS, ALL_RENTAL_HSY_GROUP_ENUMS} from "./global";
 import {Logger} from "log4ts";
 
 const logger = Logger.getLogger(`main`);
@@ -18,7 +18,7 @@ export class HsyUtil {
     if (!c.isReady()) {
       await c.refresh();
     }
-    let result:boolean = /#黑名单$/.test(c.remark() as string);
+    let result:boolean = /#黑名单$/.test(c.alias());
     if (result) {
       logger.info(`${WeChatyApiX.contactToStringLong(c)}是黑名单用户`);
     }
@@ -29,11 +29,31 @@ export class HsyUtil {
     if (!c.isReady()) {
       await c.refresh();
     }
-    return /#管理员/.test(c.remark() as string);
+    if (c.self()) return true;
+    return /#管理员/.test(c.alias());
   };
 
   public static isHsyGroup = function(topic:string) {
     return HsyUtil.getHsyGroupEnum(topic);
+  };
+  public static findAllHsyGroups = async function():Promise<Room[]> {
+    let groups = [];
+    for (let groupEnum of ALL_HSY_GROUP_ENUMS) {
+      let group = await HsyUtil.findHsyRoomByEnum(groupEnum);
+      if (group == null) continue;
+      groups.push(group);
+    }
+    return groups;
+  };
+
+  public static findAllRentalHsyGroups = async function():Promise<Room[]> {
+    let groups = [];
+    for (let groupEnum of ALL_RENTAL_HSY_GROUP_ENUMS) {
+      let group = await HsyUtil.findHsyRoomByEnum(groupEnum);
+      if (group == null) continue;
+      groups.push(group);
+    }
+    return groups;
   };
 
   public static getHsyGroupEnum = function(topic:string):HsyGroupEnum {
@@ -83,7 +103,7 @@ export class HsyUtil {
       logger.trace(`试图把管理员加入黑名单，${WeChatyApiX.contactToStringLong(contact)}...`);
     } else {
       logger.trace(`正在把用户加入黑名单，${WeChatyApiX.contactToStringLong(contact)}...`);
-      await contact.remark(contact.name().slice(0, 5)/*in case too long of name*/ + '#黑名单');
+      await contact.alias(contact.name().slice(0, 5)/*in case too long of name*/ + '#黑名单');
     }
   };
 
@@ -100,11 +120,15 @@ export class HsyUtil {
 
     for (let key in GROUP_DICT) {
       let room = await HsyUtil.findHsyRoomByKey(key);
+      console.log(`XXX before kicking ${key}`);
       logger.trace(`正在从${room.topic()}群中踢出该用户...`);
       if(contact.self()) {
         logger.warn(`WARNING WARNING WARNING attempt to delete myself!`);
-      } else await HsyUtil.kickContactFromRoom(contact, room);
-      logger.trace(`已从从${room.topic()}群中踢出该用户.`);
+      } else {
+        await HsyUtil.kickContactFromRoom(contact, room);
+        logger.trace(`已从从${room.topic()}群中踢出该用户.`);
+        await room.say(`经举报，用户${contact.name()}因违反群规被从本群及所有好室友系列租房群踢出。`);
+      }
     }
   };
 
@@ -144,7 +168,7 @@ export class WeChatyApiX {
   public static contactToStringLong = function(c:Contact):string {
     return `` +
         (StringUtil.isNullOrUndefinedOrEmpty(c.name()) ? `无昵称` : `昵称:"${c.name()}", `) +
-        (StringUtil.isNullOrUndefinedOrEmpty(c.remark() as string) ? `无备注` : `备注:"${c.remark() as string}", `) +
+        (StringUtil.isNullOrUndefinedOrEmpty(c.alias()) ? `无备注` : `备注:"${c.alias()}", `) +
         (StringUtil.isNullOrUndefinedOrEmpty(
             WeChatyApiX.getGroupNickNameFromContact(c)) ?
             `无群昵称` : `群昵称: "${WeChatyApiX.getGroupNickNameFromContact(c)}"`);

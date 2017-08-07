@@ -12,10 +12,12 @@ const newComerSize = 200;
 const groupDownSizeTarget = 465;
 const groupDownSizeTriggerThreshold = 480;
 
+let MEMORY_memberIdToMemberMap = {};
+let MEMORY_allGroups = [];
 import {
   hsyGroupClearMsg, hsyCannotUnderstandMsg, hysAlreadyAddedMsg,
   hsyGroupNickNameMsg, greetingsMsg, GLOBAL_blackListCandidates,
-  getStringFromHsyGroupEnum, ALL_HSY_GROUP_ENUMS, hsyReferMsg
+  getStringFromHsyGroupEnum, ALL_HSY_GROUP_ENUMS, hsyReferMsg, ALL_RENTAL_HSY_GROUP_ENUMS
 } from "../global";
 import {HsyGroupEnum} from "../model";
 import {escape} from "querystring";
@@ -55,7 +57,7 @@ exports = module.exports = async function onMessage(m) {
 
 let findMemberFromGroup = function(room:Room, regExp:RegExp):Array<Contact> {
   return room.memberList().filter(c => {
-    return regExp.test(c.name()) || regExp.test(c.remark() as string)
+    return regExp.test(c.name()) || regExp.test(c.alias())
         || regExp.test(WeChatyApiX.getGroupNickNameFromContact(c));
   });
 };
@@ -114,7 +116,7 @@ let maybeBlacklistUser = async function(m: Message):Promise<Boolean> {
   if(WeChatyApiX.isTalkingToMePrivately(m)
       && /加黑名单/.test(m.content())) {
     // find the last one being marked blacklist by this admin
-    let blackListObj = GLOBAL_blackListCandidates[admin.remark() as string];
+    let blackListObj = GLOBAL_blackListCandidates[admin.alias()];
 
     // not able to find a blacklist candidate.
     if (blackListObj === undefined || blackListObj === null) return false;
@@ -123,7 +125,7 @@ let maybeBlacklistUser = async function(m: Message):Promise<Boolean> {
       if ( timeLapsedInSeconds>  60 * 5) {
         await admin.say(`从刚才群内警告到现在确认加黑名单已经过了` +
             `${(timeLapsedInSeconds)/60}分钟，太久了，请重新警告`);
-        delete GLOBAL_blackListCandidates[m.from().remark() as string];
+        delete GLOBAL_blackListCandidates[m.from().alias()];
       } else {
         let indexOfCandidate = m.content().slice(4); //"加黑名单1"取编号
         let contactToBlacklist:Contact = blackListObj.candidates[indexOfCandidate];
@@ -172,14 +174,14 @@ let maybeBlacklistUser = async function(m: Message):Promise<Boolean> {
             `里警告了用户@${mentionName}，符合这个名称的群内的用户有：\n`;
         for (let i = 0; i < foundUsers.length; i++) {
           let candidate = foundUsers[i];
-          buffer += `${i}. 昵称:${candidate.name()}, 备注:${candidate.remark()}, ` +
+          buffer += `${i}. 昵称:${candidate.name()}, 备注:${candidate.alias()}, ` +
               `群昵称: ${WeChatyApiX.getGroupNickNameFromContact(candidate)} \n`;
         }
         buffer += `请问要不要把这个用户加黑名单？五分钟内回复 "加黑名单[数字编号]"\n`;
         buffer += `例如 "加黑名单0"，将会把${foundUsers[1]} ` +
             `加入黑名单:${WeChatyApiX.contactToStringLong(foundUsers[0])}`;
         await m.from().say(buffer);
-        GLOBAL_blackListCandidates[m.from().remark() as string] = {
+        GLOBAL_blackListCandidates[m.from().alias()] = {
           time: Date.now(),
           candidates: foundUsers
         };
@@ -246,9 +248,9 @@ let maybeDownsizeKeyRoom = async function(keyRoom: Room, c:Contact) {
       let c:Contact = cList[i];
       if (c.self()) continue; // never does anything with the bot itself.
       let groupNickName = WeChatyApiX.getGroupNickNameFromContact(c);
-      if (/^(管|介|群主)-/.test(groupNickName) || /管理员/.test(c.remark() as string)) {
+      if (/^(管|介|群主)-/.test(groupNickName) || /管理员/.test(c.alias())) {
         logger.info(`略过管理员 ${c.name()}, 群里叫做 ` +
-            `${WeChatyApiX.getGroupNickNameFromContact(c)}，备注${c.remark()}`);
+            `${WeChatyApiX.getGroupNickNameFromContact(c)}，备注${c.alias()}`);
         // pass, never remove
       } else if (/^(招|求)租/.test(groupNickName)) {
         // good format, but need to rotate
@@ -364,6 +366,43 @@ let maybeCreateUser = async function(m:Message):Promise<string /*userId*/ > {
   return uid;
 };
 
+async function kickAndOrBlacklist(m: Message, admin: Contact, shouldBlacklist:boolean) {
+  try {
+    let splitted = m.content().split(' ');
+    let memberToDelete: Contact = null;
+    console.log(`XXX start, splitted = ${JSON.stringify(splitted)}, splitted[1] = ${splitted[1]}, /^@/.test(splitted[1]) = ${/^@/.test(splitted[1])}`);
+    if (/^@/.test(splitted[1])) {
+      console.log(`XXX kick using id`);
+      let memberId = splitted[1];
+      if (memberId in MEMORY_memberIdToMemberMap) {
+        memberToDelete = MEMORY_memberIdToMemberMap[memberId];
+      } else {
+        console.log(`XXX MEMORY_memberIdToMemberMap = ${JSON.stringify(MEMORY_memberIdToMemberMap)}`);
+        await admin.say(`加黑时候找不到用户信息，请先发出命令"查重复"`);
+      }
+    } else {
+      console.log(`XXX kick using group and num`);
+      let groupShortName = splitted[1];
+      let groupEnum = HsyUtil.getAddGroupIndentFromMessage(groupShortName);
+      let group = await HsyUtil.findHsyRoomByEnum(groupEnum);
+      let groupMemberList = group.memberList();
+      let num = parseInt(splitted[2]);
+      memberToDelete = groupMemberList[num];
+    }
+
+    await HsyUtil.kickFromAllHsyGroups(memberToDelete);
+    if (shouldBlacklist) {
+      await HsyUtil.addToBlacklist(memberToDelete);
+      await admin.say(`加黑完成：${WeChatyApiX.contactToStringLong(memberToDelete)} `);
+    }
+
+  } catch (e) {
+    console.log(e);
+    await admin.say(`加黑命令发生错误，请检查格式和数字`);
+
+  }
+}
+
 let maybeAdminCommand = async function(m:Message) {
   if (WeChatyApiX.isTalkingToMePrivately(m) && await HsyUtil.isHsyAdmin(m.from())) {
     let admin = m.from();
@@ -424,39 +463,56 @@ let maybeAdminCommand = async function(m:Message) {
       }
       return true;
     } else if (/^踢/.test(m.content())) {
-      try {
-        let splitted = m.content().split(' ');
-        let groupShortName = splitted[1];
-        let num = parseInt(splitted[2]);
-        let groupEnum = HsyUtil.getAddGroupIndentFromMessage(groupShortName);
-        // TODO(zzn): assert group can be found
-        let group = await HsyUtil.findHsyRoomByEnum(groupEnum);
-        let groupMemberList = group.memberList();
-        let c = groupMemberList[num];
-        await HsyUtil.kickContactFromRoom(c, group);
-        await admin.say(`踢出完成：${WeChatyApiX.contactToStringLong(c)} `);
-        await group.say(`经举报，用户${c.name()}因为违反群规被从本群踢出。`);
-      } catch (e) {
-        await admin.say(`踢人命令发生错误，请检查格式和数字`);
-      }
+      await kickAndOrBlacklist(m, admin, false);
       return true;
     } else if (/^加黑/.test(m.content())) {
-      try {
-        let splitted = m.content().split(' ');
-        let groupShortName = splitted[1];
-        let num = parseInt(splitted[2]);
-        let groupEnum = HsyUtil.getAddGroupIndentFromMessage(groupShortName);
-        // TODO(zzn): assert group can be found
-        let group = await HsyUtil.findHsyRoomByEnum(groupEnum);
-        let groupMemberList = group.memberList();
-        let c = groupMemberList[num];
-        await HsyUtil.kickFromAllHsyGroups(c);
-        await HsyUtil.addToBlacklist(c);
-        await admin.say(`加黑完成：${WeChatyApiX.contactToStringLong(c)} `);
-        await group.say(`经举报，用户${c.name()}因为违反群规被从本群及所有好室友系列租房群踢出。`);
-      } catch (e) {
-        await admin.say(`加黑命令发生错误，请检查格式和数字`);
+      await kickAndOrBlacklist(m, admin, true);
+      return true;
+    } else if (/^查重复/.test(m.content())) {
+
+      let splitted = m.content().split(' ');
+      let threshold:number = 4;
+      if (splitted.length>=2 && parseInt(splitted[1])) {
+        threshold = parseInt(splitted[1]);
       }
+      await admin.say(`开始查重复(threshold = ${threshold})...`);
+      MEMORY_allGroups = []; // clear it each time
+      MEMORY_memberIdToMemberMap = {}; // clear it each time
+      let memberIdToCountMap = {};
+      let overThresholdMemberList = [];
+      MEMORY_allGroups = await HsyUtil.findAllHsyGroups();
+      for (let groupEnum of ALL_HSY_GROUP_ENUMS) {
+        let group = await HsyUtil.findHsyRoomByEnum(groupEnum);
+        if (group ==null) continue;
+        MEMORY_allGroups.push(group);
+        await admin.say(`群: ${group.topic()}用户数为 ${group.memberList().length}`);
+        for (let member of group.memberList()) {
+          if (member.id in memberIdToCountMap) {
+            memberIdToCountMap[member.id] = memberIdToCountMap[member.id] + 1;
+          } else {
+            memberIdToCountMap[member.id] = 1;
+            MEMORY_memberIdToMemberMap[member.id] = member;
+          }
+        }
+      }
+      for (let memberId in memberIdToCountMap) {
+        if (memberIdToCountMap[memberId] >= threshold) {
+          overThresholdMemberList.push(MEMORY_memberIdToMemberMap[memberId]);
+        }
+      }
+      let header = `查到重复人数为 ${overThresholdMemberList.length}:\n`;
+      let adminBuffer = '';
+      let nonAdminBuffer = '';
+      for (let m of overThresholdMemberList) {
+        let msg = `${WeChatyApiX.contactToStringLong(m)}, id=${m.id}, 重复次数: ${memberIdToCountMap[m.id]}\n`;
+        if (await HsyUtil.isHsyAdmin(m)) {
+          adminBuffer += msg;
+        } else {
+          nonAdminBuffer += msg;
+        }
+      }
+      let responseBuffer = header + `--- NonAdmins: ---\m` + nonAdminBuffer + `--- Admins: ---\n` + adminBuffer;
+      await admin.say(responseBuffer);
       return true;
     } else {
       await admin.say(
@@ -465,6 +521,7 @@ let maybeAdminCommand = async function(m:Message) {
 1. 跟小助手私下说：
 - "状态"：将返回小助手和微信群的状态
 - "列出 [群短名] [lowerBound] [UpperBound]:" 将列出特定租房群里面的一些网友名称。例如 "列出 南湾西 0 9"：会列出南湾西群里的第0个到第9个网友的名称并包含序号，记得加空格
+- "查重复 [limit]": 将列出同时在多个好室友系列租房群的群友，以便进行清理和加黑。
 2. 在咱们好室友的群里面对人说话
   "@张三 请不要发无关消息"或者"@张三 请按要求修改群昵称"：将触发小助手重复你的话并私信你寻求黑名单指令
   

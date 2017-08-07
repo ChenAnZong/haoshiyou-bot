@@ -31,6 +31,16 @@ export const ALL_HSY_GROUP_ENUMS:Array<any> = [
     HsyGroupEnum.BigTeam
 ];
 
+export const ALL_RENTAL_HSY_GROUP_ENUMS:Array<any> = [
+  HsyGroupEnum.SanFrancisco,
+  HsyGroupEnum.SouthBayWest,
+  HsyGroupEnum.SouthBayEast,
+  HsyGroupEnum.EastBay,
+  HsyGroupEnum.MidPeninsula,
+  HsyGroupEnum.Seattle,
+  HsyGroupEnum.ShortTerm,
+];
+
 export let getStringFromHsyGroupEnum = function(input:HsyGroupEnum):string {
   for (let key in GROUP_DICT) {
     if (GROUP_DICT[key] == input) return key;
