@@ -1,12 +1,16 @@
 import { Logger, LoggerConfig } from "log4ts";
 import {Room, Contact} from "wechaty";
+
 import {WeChatyApiX, HsyUtil} from "../hsy-util";
 import {HsyGroupEnum} from "../model";
+
 import * as webdriver from "../../.cache.bak/yarn/npm-@types/selenium-webdriver-2.53.39-15ff93392c339abd39d6d3a04e715faa9a263cf3/index";
 import map = webdriver.promise.map;
+
 const logger = Logger.getLogger(`main`);
 const magicChar = String.fromCharCode(8197);
-exports = module.exports = async function onRoomJoin(
+
+export default async function onRoomJoin(
     room:Room, inviteeList:Contact[], inviter:Contact) {
   if (HsyUtil.getHsyGroupEnum(room.topic()) != HsyGroupEnum.None) {
     await maybeRemoveBlacklistInviteeAndInviter(room, inviteeList, inviter);
@@ -14,6 +18,7 @@ exports = module.exports = async function onRoomJoin(
     await sendWelcomeMessage(room, inviteeList, inviter);
   }
 };
+
 let maybeWarnInviteeJoinedTooManyGroups = async function(room:Room,  inviteeList:Contact[], inviter:Contact) {
   let threshold = 2;
   let groups = await HsyUtil.findAllHsyGroups();

@@ -1,10 +1,13 @@
 import {Room, Contact, Message, MsgType} from "wechaty";
-import {HsyBotLogger} from "../datastore";
+import {escape} from "querystring";
 import { createWriteStream }  from 'fs';
 import { Logger, LoggerConfig } from "log4ts";
+
+import {HsyBotLogger} from "../datastore";
 import {LoopbackQuerier} from "../loopback-querier";
 import {HsyUser} from "../../loopbacksdk/models/HsyUser";
 import {HsyUtil, WeChatyApiX} from "../hsy-util";
+import {HsyGroupEnum} from "../model";
 
 const cloudinary = require('cloudinary');
 const logger = Logger.getLogger(`main`);
@@ -19,8 +22,6 @@ import {
   hsyGroupNickNameMsg, greetingsMsg, GLOBAL_blackListCandidates,
   getStringFromHsyGroupEnum, ALL_HSY_GROUP_ENUMS, hsyReferMsg, ALL_RENTAL_HSY_GROUP_ENUMS
 } from "../global";
-import {HsyGroupEnum} from "../model";
-import {escape} from "querystring";
 
 if (process.env.CLOUDINARY_SECRET !== undefined && process.env.CLOUDINARY_SECRET.length > 0) {
   cloudinary.config({
@@ -34,7 +35,7 @@ if (process.env.CLOUDINARY_SECRET !== undefined && process.env.CLOUDINARY_SECRET
   process.exit();
 }
 
-exports = module.exports = async function onMessage(m) {
+export default async function onMessage(m) {
   logger.trace(`Got a msg type: ${m.type()}`);
   HsyBotLogger.logRawChatMsg(m).then(() => {/* does nothing, not waiting*/});
   if (!HsyUtil.shouldCareAboutMessage(m)) {
@@ -516,7 +517,7 @@ let maybeAdminCommand = async function(m:Message) {
       return true;
     } else {
       await admin.say(
-`管理员${admin.name()}你好，感谢你的辛勤劳动，群友们都感谢你！
+`亲爱的管理员${admin.name()}你好，感谢你的辛勤劳动，群友们都感谢你！
 以下是管理员命令(咒语):
 1. 跟小助手私下说：
 - "状态"：将返回小助手和微信群的状态

@@ -4,7 +4,7 @@ import { Logger, LoggerConfig } from "log4ts";
 
 const logger = Logger.getLogger(`room-topic`);
 
-exports = module.exports = async function onRoomTopic(
+export default async function onRoomTopic(
     room: Room, topic: string, oldTopic: string, changer: Contact) {
   logger.trace('On RoomTopic Event!');
   logger.debug(`Room ${room.topic()} topic changed from ${oldTopic} ` +
