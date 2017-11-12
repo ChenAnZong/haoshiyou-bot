@@ -31,7 +31,7 @@ bot.on('message', 'listener/message');
 bot.on('heartbeat', 'listener/heartbeat');
 bot.on('error', 'listener/error');
 
-bot.init()
+bot.start()
     .catch(async (e) => {
       log.error('Bot', 'init() fail: %s', e);
       await bot.stop();
