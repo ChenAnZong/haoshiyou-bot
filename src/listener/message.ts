@@ -10,7 +10,7 @@ import {HsyUtil, WeChatyApiX} from "../hsy-util";
 import {HsyGroupEnum} from "../model";
 
 const cloudinary = require('cloudinary');
-const logger = Logger.getLogger(`main`);
+let logger = Logger.getLogger(`message`);
 const newComerSize = 200;
 const groupDownSizeTarget = 465;
 const groupDownSizeTriggerThreshold = 480;
@@ -35,13 +35,15 @@ if (process.env.CLOUDINARY_SECRET !== undefined && process.env.CLOUDINARY_SECRET
   process.exit();
 }
 
-export default async function onMessage(m) {
-  logger.trace(`Got a msg type: ${m.type()}`);
+exports = module.exports = async function onMessage(m:Message) {
+  logger.trace(`XXX Got a msg type: ${m.type()}`);
   HsyBotLogger.logRawChatMsg(m).then(() => {/* does nothing, not waiting*/});
+  logger.debug(`In Message should I care about message? XXX`);
   if (!HsyUtil.shouldCareAboutMessage(m)) {
+    logger.debug(`I don't care. XXX`);
     return;
   } // We don't care
-
+  logger.debug(`I do care. XXX`);
   if (await HsyUtil.isHsyAdmin(m.from())) {
     logger.info(`A message from Admin`);
   } else if (await HsyUtil.isHsyBlacklisted(m.from())) {
@@ -371,18 +373,26 @@ async function kickAndOrBlacklist(m: Message, admin: Contact, shouldBlacklist:bo
   try {
     let splitted = m.content().split(' ');
     let memberToDelete: Contact = null;
-    console.log(`XXX start, splitted = ${JSON.stringify(splitted)}, splitted[1] = ${splitted[1]}, /^@/.test(splitted[1]) = ${/^@/.test(splitted[1])}`);
-    if (/^@/.test(splitted[1])) {
-      console.log(`XXX kick using id`);
+    if (/^@/.test(splitted[1])) { // delete by id
       let memberId = splitted[1];
       if (memberId in MEMORY_memberIdToMemberMap) {
-        memberToDelete = MEMORY_memberIdToMemberMap[memberId];
+        memberToDelete = MEMORY_memberIdToMemberMap[memberId]; // TODO(zzn): bug, when not a friend of the
       } else {
-        console.log(`XXX MEMORY_memberIdToMemberMap = ${JSON.stringify(MEMORY_memberIdToMemberMap)}`);
-        await admin.say(`加黑时候找不到用户信息，请先发出命令"查重复"`);
+        let groups = await HsyUtil.findAllHsyGroups();
+        for(let group of groups) {
+          let found = group.memberList().filter(c => c.id == memberId);
+          if (found.length>0) {
+            memberToDelete = found[0];
+            break;
+          }
+        }
+        if (memberToDelete == null) {
+          await admin.say(`加黑时候找不到用户信息，请先发出命令"查重复"`);
+          return;
+        }
+        // else does nothing, fall through
       }
-    } else {
-      console.log(`XXX kick using group and num`);
+    } else { // delete by number
       let groupShortName = splitted[1];
       let groupEnum = HsyUtil.getAddGroupIndentFromMessage(groupShortName);
       let group = await HsyUtil.findHsyRoomByEnum(groupEnum);
@@ -390,7 +400,6 @@ async function kickAndOrBlacklist(m: Message, admin: Contact, shouldBlacklist:bo
       let num = parseInt(splitted[2]);
       memberToDelete = groupMemberList[num];
     }
-
     await HsyUtil.kickFromAllHsyGroups(memberToDelete);
     if (shouldBlacklist) {
       await HsyUtil.addToBlacklist(memberToDelete);
@@ -432,7 +441,6 @@ let maybeAdminCommand = async function(m:Message) {
       await admin.say(reportStr);
       return true;
     } else if (/^列出/.test(m.content())) {
-      console.log(`XXXX 列出列出！`);
       try {
         let splitted = m.content().split(' ');
         // TODO(zzn): assert splitted.lenght == 4;
@@ -455,8 +463,10 @@ let maybeAdminCommand = async function(m:Message) {
         responseBuffer += `\n
 
 回复
-- "踢 [群短名] [num]": 会把特定租房群里面的群友踢出去并在群内警告
-- "加黑 [群短名] [num]": 会把特定租房群里面的群友踢出去、加黑名单并在群内警告
+- "踢 [群短名] [num]": 会把特定名称为[群短名]的那个租房群里面的第[num]个群友踢出去并在群内警告
+- "加黑 [群短名] [num]": 会把特定名称为[群短名]的那个租房群里面的第[num]群友踢出去、加黑名单并在群内警告
+- "踢 [@id]": 会把所有租房群里面的id为[@id]的群友踢出去并在群内警告
+- "加黑 [@id]": 会把所有租房群里面的[@id]群友踢出去、加黑名单并在群内警告
 `;
         await admin.say(responseBuffer);
       } catch (e) {

@@ -1,10 +1,9 @@
 import {Message, Contact, Room} from "wechaty";
 import {HsyGroupEnum} from "./model";
-import Global = NodeJS.Global;
 import {GROUP_DICT, getStringFromHsyGroupEnum, ALL_HSY_GROUP_ENUMS, ALL_RENTAL_HSY_GROUP_ENUMS} from "./global";
 import {Logger} from "log4ts";
 
-const logger = Logger.getLogger(`main`);
+const logger = Logger.getLogger(`hsy-util`);
 
 export class HsyUtil {
   public static getNormalizedHsyGroupName(groupName:string):string {
@@ -120,7 +119,6 @@ export class HsyUtil {
 
     for (let key in GROUP_DICT) {
       let room = await HsyUtil.findHsyRoomByKey(key);
-      console.log(`XXX before kicking ${key}`);
       logger.trace(`正在从${room.topic()}群中踢出该用户...`);
       if(contact.self()) {
         logger.warn(`WARNING WARNING WARNING attempt to delete myself!`);
@@ -132,12 +130,24 @@ export class HsyUtil {
     }
   };
 
-  public static shouldCareAboutMessage = function(message:Message) {
-    return !message.self() &&
-        (
-            WeChatyApiX.isTalkingToMePrivately(message) ||
-            HsyUtil.getHsyGroupEnum(message.room().topic()) != HsyGroupEnum.None
-        ) && !/开启了朋友验证/.test(message.content())
+  public static shouldCareAboutMessage = function(message:Message):boolean {
+    let logger = Logger.getLogger(`hsy-util`);
+    logger.debug(`In HsyUtil should i care about this message? XXX`);
+    if (message.self()) {
+      logger.debug(`Ignoring message because it is from myself`);
+      return false;
+    } else if (/开启了朋友验证/.test(message.content())) {
+      logger.debug(`Ignoring message because it is a system message indicating the friend is no longer a friend and request friendship authorization to deliver a message.`);
+      return false;
+    } else if (/好室友/.test(message.from().name() + message.from().alias()) ||
+        /haoshiyou/.test(message.from().name() + message.from().alias()) ) {
+      logger.debug(`Ignoring message because it's a message from a haoshiyou bot`);
+      return false;
+    } else if (WeChatyApiX.isTalkingToMePrivately(message)) {
+      return true;
+    }
+    return WeChatyApiX.isTalkingToMePrivately(message) ||
+        HsyUtil.getHsyGroupEnum(message.room().topic()) != HsyGroupEnum.None;
   };
 
   public static getAddGroupIndentFromMessage = function(
@@ -167,11 +177,12 @@ export class HsyUtil {
 export class WeChatyApiX {
   public static contactToStringLong = function(c:Contact):string {
     return `` +
-        (StringUtil.isNullOrUndefinedOrEmpty(c.name()) ? `无昵称` : `昵称:"${c.name()}", `) +
-        (StringUtil.isNullOrUndefinedOrEmpty(c.alias()) ? `无备注` : `备注:"${c.alias()}", `) +
+        (StringUtil.isNullOrUndefinedOrEmpty(c.name()) ? `无昵称, ` : `昵称:"${c.name()}", `) +
+        (StringUtil.isNullOrUndefinedOrEmpty(c.alias()) ? `无备注, ` : `备注:"${c.alias()}", `) +
         (StringUtil.isNullOrUndefinedOrEmpty(
             WeChatyApiX.getGroupNickNameFromContact(c)) ?
-            `无群昵称` : `群昵称: "${WeChatyApiX.getGroupNickNameFromContact(c)}"`);
+            `无群昵称, ` : `群昵称: "${WeChatyApiX.getGroupNickNameFromContact(c)}", `) +
+        `id=${c.id}`;
   };
 
   public static getGroupNickNameFromContact = function(c:Contact) {

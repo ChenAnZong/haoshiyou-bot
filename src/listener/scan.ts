@@ -1,8 +1,8 @@
 import {HsyBotLogger} from "../datastore";
 import { Logger, LoggerConfig } from "log4ts";
-const logger = Logger.getLogger(`main`);
+const logger = Logger.getLogger(`scan`);
 
-export default async function onScan(url, code) {
+exports = module.exports = async function onScan(url, code) {
   switch (code) {
     case 408:
       await HsyBotLogger.logDebug(`Please scan the QR code for URL ${url}. Code ${code}`);

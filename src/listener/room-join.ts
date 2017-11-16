@@ -7,10 +7,10 @@ import {HsyGroupEnum} from "../model";
 import * as webdriver from "../../.cache.bak/yarn/npm-@types/selenium-webdriver-2.53.39-15ff93392c339abd39d6d3a04e715faa9a263cf3/index";
 import map = webdriver.promise.map;
 
-const logger = Logger.getLogger(`main`);
+const logger = Logger.getLogger(`room-join`);
 const magicChar = String.fromCharCode(8197);
 
-export default async function onRoomJoin(
+exports = module.exports = async function onRoomJoin(
     room:Room, inviteeList:Contact[], inviter:Contact) {
   if (HsyUtil.getHsyGroupEnum(room.topic()) != HsyGroupEnum.None) {
     await maybeRemoveBlacklistInviteeAndInviter(room, inviteeList, inviter);
@@ -21,29 +21,51 @@ export default async function onRoomJoin(
 
 let maybeWarnInviteeJoinedTooManyGroups = async function(room:Room,  inviteeList:Contact[], inviter:Contact) {
   let threshold = 2;
-  let groups = await HsyUtil.findAllHsyGroups();
+  let allGroups = await HsyUtil.findAllHsyGroups();
+  let joiningGroup = await HsyUtil.getHsyGroupEnum(room.topic());
   let mapInviteeIdToRoomList = {};
 
-  inviteeList.forEach((invitee) => {
-    mapInviteeIdToRoomList[invitee.id] = [];
-    for (let group of groups) {
-      mapInviteeIdToRoomList[invitee.id].push(group);
+  inviteeList.forEach((invitee:Contact) => {
+    mapInviteeIdToRoomList[invitee.id] = []; // create a RoomList for each invitee, empty
+    for (let group of allGroups) {
+      if (group.has(invitee) || room.id == group.id) {
+        mapInviteeIdToRoomList[invitee.id].push(group);
+        logger.debug(`Invitee: ${WeChatyApiX.contactToStringLong(invitee)} is in group ${group.topic()}
+        group = ${group.topic()}, group.has(invitee) = ${group.has(invitee)}
+        joiningGroup = ${joiningGroup}, room.topic() = ${room.topic()}
+        joiningGroup == HsyUtil.getHsyGroupEnum(room.topic()) = ${joiningGroup == HsyUtil.getHsyGroupEnum(room.topic())}
+        invitee in the memberList = ${group.memberList().filter(c=>c.id ==invitee.id).join(',')}
+        `);
+      } else {
+        logger.debug(`Invitee: ${WeChatyApiX.contactToStringLong(invitee)} is NOT in group ${group.topic()}`);
+      }
     }
   });
   let flag = false;
-  let buffer = `警告，刚刚被这个邀请人（${WeChatyApiX.contactToStringLong(inviter)}）加入群${room.topic()}的用户被加入超过${threshold}个群\n`;
+  let buffer = `警告，有用户被加入超过${threshold}个群
+邀请人：${WeChatyApiX.contactToStringLong(inviter)}
+加入房间：${room.topic()}`;
   for (let invitee of inviteeList) {
     if (mapInviteeIdToRoomList[invitee.id].length >= threshold) {
       flag = true;
-      buffer += `被邀请人${WeChatyApiX.contactToStringLong(invitee)}\n被加入以下${mapInviteeIdToRoomList[invitee.id].length}个群\n`;
-      buffer += `${mapInviteeIdToRoomList[invitee.id].map((room) => `${room.topic()}\n`)}`;
+      buffer += `
+被邀请人：${WeChatyApiX.contactToStringLong(invitee)}
+被加入以下${mapInviteeIdToRoomList[invitee.id].length}个群：
+`;
+      buffer += mapInviteeIdToRoomList[invitee.id].map((room) => `  ${room.topic()}`).join('\n');
     }
   }
+  buffer += `
+回复
+- "踢 [@id]": 会把所有租房群里面的id为[@id]的群友踢出去并在群内警告
+- "加黑 [@id]": 会把所有租房群里面的[@id]群友踢出去、加黑名单并在群内警告
+  `;
   if (flag) {
     let bigTeam = await HsyUtil.findHsyBigTeamRoom();
     bigTeam.say(buffer);
   }
 };
+
 let maybeRemoveBlacklistInviteeAndInviter = async function(
     room:Room,  inviteeList:Contact[], inviter:Contact) {
     logger.info(`群 ${room.topic()}, ${inviter.name()}邀请${inviteeList.length}个新成员，内容如下`);

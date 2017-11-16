@@ -13,7 +13,7 @@
     "qrcode-terminal": "^0.11.0",
     "request": "^2.79.0",
     "uuid": "^3.0.1",
-    "wechaty": "0.11.29"
+    "wechaty": "0.13.32"
   },
   "scripts": {
     "start": "docker run --env CLOUDINARY_SECRET=$CLOUDINARY_SECRET -ti --volume=\"$(pwd)\":/bot --rm zixia/wechaty src/main.ts",
