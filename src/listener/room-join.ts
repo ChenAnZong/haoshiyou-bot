@@ -4,9 +4,6 @@ import {Room, Contact} from "wechaty";
 import {WeChatyApiX, HsyUtil} from "../hsy-util";
 import {HsyGroupEnum} from "../model";
 
-import * as webdriver from "../../.cache.bak/yarn/npm-@types/selenium-webdriver-2.53.39-15ff93392c339abd39d6d3a04e715faa9a263cf3/index";
-import map = webdriver.promise.map;
-
 const logger = Logger.getLogger(`room-join`);
 const magicChar = String.fromCharCode(8197);
 
