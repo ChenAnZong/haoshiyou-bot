@@ -18,7 +18,7 @@ exports = module.exports = async function onRoomJoin(
 
 let maybeWarnInviteeJoinedTooManyGroups = async function(room:Room,  inviteeList:Contact[], inviter:Contact) {
   let threshold = 2;
-  let allGroups = await HsyUtil.findAllHsyGroups();
+  let allGroups = await HsyUtil.findAllRentalHsyGroups();
   let joiningGroup = await HsyUtil.getHsyGroupEnum(room.topic());
   let mapInviteeIdToRoomList = {};
 

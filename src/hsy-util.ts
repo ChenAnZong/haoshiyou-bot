@@ -35,6 +35,7 @@ export class HsyUtil {
   public static isHsyGroup = function(topic:string) {
     return HsyUtil.getHsyGroupEnum(topic);
   };
+
   public static findAllHsyGroups = async function():Promise<Room[]> {
     let groups = [];
     for (let groupEnum of ALL_HSY_GROUP_ENUMS) {

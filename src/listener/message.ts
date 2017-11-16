@@ -16,7 +16,7 @@ const groupDownSizeTarget = 465;
 const groupDownSizeTriggerThreshold = 480;
 
 let MEMORY_memberIdToMemberMap = {};
-let MEMORY_allGroups = [];
+let MEMORY_allGroups:Room[] = [];
 import {
   hsyGroupClearMsg, hsyCannotUnderstandMsg, hysAlreadyAddedMsg,
   hsyGroupNickNameMsg, greetingsMsg, GLOBAL_blackListCandidates,
@@ -376,9 +376,9 @@ async function kickAndOrBlacklist(m: Message, admin: Contact, shouldBlacklist:bo
     if (/^@/.test(splitted[1])) { // delete by id
       let memberId = splitted[1];
       if (memberId in MEMORY_memberIdToMemberMap) {
-        memberToDelete = MEMORY_memberIdToMemberMap[memberId]; // TODO(zzn): bug, when not a friend of the
+        memberToDelete = MEMORY_memberIdToMemberMap[memberId];
       } else {
-        let groups = await HsyUtil.findAllHsyGroups();
+        let groups = await HsyUtil.findAllRentalHsyGroups();
         for(let group of groups) {
           let found = group.memberList().filter(c => c.id == memberId);
           if (found.length>0) {
@@ -411,6 +411,61 @@ async function kickAndOrBlacklist(m: Message, admin: Contact, shouldBlacklist:bo
     await admin.say(`加黑命令发生错误，请检查格式和数字`);
 
   }
+}
+
+async function checkOrKickRepeat(m: Message, admin: Contact, shouldKick:boolean = false, longName:boolean = false) {
+  let splitted = m.content().split(' ');
+  let threshold: number = 4;
+  if (splitted.length >= 2 && parseInt(splitted[1])) {
+    threshold = parseInt(splitted[1]);
+  }
+  await admin.say(`开始查重复(threshold = ${threshold})...`);
+  MEMORY_allGroups = []; // clear it each time
+  MEMORY_memberIdToMemberMap = {}; // clear it each time
+  let memberIdToCountMap = {};
+  let overThresholdMemberList:Contact[] = [];
+  MEMORY_allGroups = await HsyUtil.findAllRentalHsyGroups();
+  for (let groupEnum of ALL_RENTAL_HSY_GROUP_ENUMS) {
+    let group = await HsyUtil.findHsyRoomByEnum(groupEnum);
+    if (group == null) continue;
+    MEMORY_allGroups.push(group);
+    await admin.say(`群: ${group.topic()}用户数为 ${group.memberList().length}`);
+    for (let member of group.memberList()) {
+      if (await HsyUtil.isHsyAdmin(member)) continue; // skip admins
+      if (member.id in memberIdToCountMap) {
+        memberIdToCountMap[member.id] = memberIdToCountMap[member.id] + 1;
+      } else {
+        memberIdToCountMap[member.id] = 1;
+        MEMORY_memberIdToMemberMap[member.id] = member;
+      }
+    }
+  }
+  for (let memberId in memberIdToCountMap) {
+    if (memberIdToCountMap[memberId] >= threshold) {
+      overThresholdMemberList.push(MEMORY_memberIdToMemberMap[memberId]);
+    }
+  }
+  let header = `查到重复人数为 ${overThresholdMemberList.length}:\n`;
+  let nonAdminBuffer = '';
+  for (let m of overThresholdMemberList) {
+    nonAdminBuffer += `${longName ? WeChatyApiX.contactToStringLong(m) : m.name()}, 重复次数: ${memberIdToCountMap[m.id]}\n`;
+  }
+  let responseBuffer = header + `--- NonAdmins: ---\n` + nonAdminBuffer;
+  await admin.say(responseBuffer);
+  if (shouldKick) {
+
+    for (let overThresholdMember of overThresholdMemberList) {
+      for (let group of MEMORY_allGroups) {
+        if (group.has(overThresholdMember)) {
+          await group.del(overThresholdMember);
+          await group.say(`把${overThresholdMember.name()}从本群里踢出`);
+        }
+
+      }
+      await admin.say(`把${overThresholdMember.name()}从每个房间踢出了`);
+    }
+  }
+
 }
 
 let maybeAdminCommand = async function(m:Message) {
@@ -473,57 +528,17 @@ let maybeAdminCommand = async function(m:Message) {
         await admin.say(`发生错误: ${e}`);
       }
       return true;
-    } else if (/^踢/.test(m.content())) {
+    } else if (/^踢 /.test(m.content())) {
       await kickAndOrBlacklist(m, admin, false);
       return true;
-    } else if (/^加黑/.test(m.content())) {
+    } else if (/^加黑 /.test(m.content())) {
       await kickAndOrBlacklist(m, admin, true);
       return true;
-    } else if (/^查重复/.test(m.content())) {
-
-      let splitted = m.content().split(' ');
-      let threshold:number = 4;
-      if (splitted.length>=2 && parseInt(splitted[1])) {
-        threshold = parseInt(splitted[1]);
-      }
-      await admin.say(`开始查重复(threshold = ${threshold})...`);
-      MEMORY_allGroups = []; // clear it each time
-      MEMORY_memberIdToMemberMap = {}; // clear it each time
-      let memberIdToCountMap = {};
-      let overThresholdMemberList = [];
-      MEMORY_allGroups = await HsyUtil.findAllHsyGroups();
-      for (let groupEnum of ALL_HSY_GROUP_ENUMS) {
-        let group = await HsyUtil.findHsyRoomByEnum(groupEnum);
-        if (group ==null) continue;
-        MEMORY_allGroups.push(group);
-        await admin.say(`群: ${group.topic()}用户数为 ${group.memberList().length}`);
-        for (let member of group.memberList()) {
-          if (member.id in memberIdToCountMap) {
-            memberIdToCountMap[member.id] = memberIdToCountMap[member.id] + 1;
-          } else {
-            memberIdToCountMap[member.id] = 1;
-            MEMORY_memberIdToMemberMap[member.id] = member;
-          }
-        }
-      }
-      for (let memberId in memberIdToCountMap) {
-        if (memberIdToCountMap[memberId] >= threshold) {
-          overThresholdMemberList.push(MEMORY_memberIdToMemberMap[memberId]);
-        }
-      }
-      let header = `查到重复人数为 ${overThresholdMemberList.length}:\n`;
-      let adminBuffer = '';
-      let nonAdminBuffer = '';
-      for (let m of overThresholdMemberList) {
-        let msg = `${WeChatyApiX.contactToStringLong(m)}, id=${m.id}, 重复次数: ${memberIdToCountMap[m.id]}\n`;
-        if (await HsyUtil.isHsyAdmin(m)) {
-          adminBuffer += msg;
-        } else {
-          nonAdminBuffer += msg;
-        }
-      }
-      let responseBuffer = header + `--- NonAdmins: ---\m` + nonAdminBuffer + `--- Admins: ---\n` + adminBuffer;
-      await admin.say(responseBuffer);
+    } else if (/^查重复 /.test(m.content())) {
+      await checkOrKickRepeat(m, admin);
+      return true;
+    } else if (/^踢重复 /.test(m.content())) {
+      await checkOrKickRepeat(m, admin, true);
       return true;
     } else {
       await admin.say(
@@ -532,7 +547,8 @@ let maybeAdminCommand = async function(m:Message) {
 1. 跟小助手私下说：
 - "状态"：将返回小助手和微信群的状态
 - "列出 [群短名] [lowerBound] [UpperBound]:" 将列出特定租房群里面的一些网友名称。例如 "列出 南湾西 0 9"：会列出南湾西群里的第0个到第9个网友的名称并包含序号，记得加空格
-- "查重复 [limit]": 将列出同时在多个好室友系列租房群的群友，以便进行清理和加黑。
+- "查重复 [limit]": 将列出同时在多个（超过[limit]个的群）好室友系列租房群的群友，以便进行清理和加黑。
+- "踢重复 [limit]": 将踢出同时在多个（超过[limit]个的群）好室友系列租房群的群友，以便进行清理和加黑。
 2. 在咱们好室友的群里面对人说话
   "@张三 请不要发无关消息"或者"@张三 请按要求修改群昵称"：将触发小助手重复你的话并私信你寻求黑名单指令
   
