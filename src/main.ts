@@ -14,14 +14,23 @@ const Wechaty = require('wechaty').default;
 import ConsoleAppender from "log4ts/build/appenders/ConsoleAppender";
 import BasicLayout from "log4ts/build/layouts/BasicLayout";
 import {LogLevel} from "log4ts/build/LogLevel";
+import GcpStackdriverAppender from './log4ts-extension/GcpStackdriverAppender';
+
+const os = require('os');
 
 let configLogger = function() {
-  let appender = new ConsoleAppender();
+  let consoleAppender = new ConsoleAppender();
+  let sdAppender = new GcpStackdriverAppender();
+
   let layout = new BasicLayout();
-  appender.setLayout(layout);
-  let config = new LoggerConfig(appender);
+  consoleAppender.setLayout(layout);
+  let config = new LoggerConfig(consoleAppender);
+  config.addAppender(sdAppender);
   config.setLevel(LogLevel.DEBUG);
   Logger.setConfig(config);
+  const logger = Logger.getLogger(`main`);
+  logger.info(`Haoshiyou-bot started in Host:${os.hostname()}.`);
+  logger.info(`Configured logger.`);
 };
 const isProd = process.env.NODE_ENV === 'production';
 const bot = Wechaty.instance();

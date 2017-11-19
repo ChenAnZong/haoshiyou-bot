@@ -133,9 +133,8 @@ export class HsyUtil {
 
   public static shouldCareAboutMessage = function(message:Message):boolean {
     let logger = Logger.getLogger(`hsy-util`);
-    logger.debug(`In HsyUtil should i care about this message? XXX`);
     if (message.self()) {
-      logger.debug(`Ignoring message because it is from myself`);
+      // logger.debug(`Ignoring message because it is from myself`);
       return false;
     } else if (/开启了朋友验证/.test(message.content())) {
       logger.debug(`Ignoring message because it is a system message indicating the friend is no longer a friend and request friendship authorization to deliver a message.`);

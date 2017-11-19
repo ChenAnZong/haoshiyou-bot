@@ -17,3 +17,4 @@ tmp
 npm-debug.log
 .sudo_as_admin_successful
 demo.wechaty.json
+.credentials

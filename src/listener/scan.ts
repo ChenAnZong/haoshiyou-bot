@@ -10,16 +10,16 @@ exports = module.exports = async function onScan(url, code) {
       require('qrcode-terminal').generate(loginUrl);
       break;
     case 200:
-      logger.debug(`200 login confirmed`);
+      logger.debug(`WeChaty Scan 200 login confirmed`);
       break;
     case 201:
-      logger.debug(`201 scanned, wait for confirm`);
+      logger.debug(`WeChaty Scan 201 scanned, wait for confirm`);
       break;
     case 0:
-      logger.debug(`0 init`);
+      logger.debug(`WeChaty Scan 0 init`);
       break;
     default:
-      logger.debug(`Other code: ${code}`);
+      logger.debug(`WeChaty Scan Other code: ${code}`);
   }
 
 };
