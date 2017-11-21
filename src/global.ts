@@ -49,7 +49,7 @@ export let getStringFromHsyGroupEnum = function(input:HsyGroupEnum):string {
 };
 
 export const hsyReferMsg = `
-另外，用户在我们系列微信群里发布的招租求租信息将自动同时发布到我们的网站和app。欢迎尝试： 网站: http://haoshiyou.org/?referrer=hsybot-private
+另外，用户在我们系列微信群里发布的招租求租信息将自动同时发布到我们的网站和app。欢迎尝试： 网站: http://haoshiyou.org/?referrer=hsybot-private&utm_source=haoshiyou-bot&utm_campaign=add_to_group
 
 [UX留言]好室友小帮手希望能够通过问卷调查了解你在湾区找房子／找室友／招租的经历，从而帮助我们更好地定位我们的产品，让好室友更好地为大家服务。完成问卷大概需要5分钟。如果你正在或曾经找过房子／室友，请点https://goo.gl/fnnDpi 如果你是房东，请点https://goo.gl/7rF4go 感谢大家的配合！
 `;
@@ -93,13 +93,13 @@ export const hsyGroupNickNameMsg = `
   KIR - Kirkland
 
 好室友系列租房群会自动定期清理没有修改群昵称的群友，以及最早的群友以便给新人腾位置。
-如果你被清理出去了也别担心，随时加好室友的小助手(WeChat:haoshiyou-bot2)。`;
+如果你被清理出去了也别担心，随时加好室友的小助手(WeChat:haoshiyou-bot)。`;
 
 export const hsyGroupClearMsg = `亲爱的各位好室友租房群的群友们，现在群快满了，清理一批群友给新朋友们腾位置。
 我们主要清理两类朋友：
 1. 没有按照改群昵称的朋友，如果你的群昵称不是以'招'、'求'、'介'开头，那么你可能会被优先清理；
 2. 如果你的入群时间比较长，那么我们会请你优先离群，把空位流动起来（可以重新回来）；
-若仍有需求，欢迎私信好室友小助手（微信号：haoshiyou-bot2）重新加群哈~\n
+若仍有需求，欢迎私信好室友小助手（微信号：haoshiyou-bot）重新加群哈~\n
 
 [UX留言]好室友小帮手希望能够通过问卷调查了解你在湾区找房子／找室友／招租的经历，从而帮助我们更好地定位我们的产品，让好室友更好地为大家服务。完成问卷大概需要5分钟。如果你正在或曾经找过房子／室友，请点https://goo.gl/fnnDpi 如果你是房东，请点https://goo.gl/7rF4go 感谢大家的配合！
 ` + hsyReferMsg;

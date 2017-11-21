@@ -232,8 +232,8 @@ let maybeExtractPostingMessage = async function(m:Message):Promise<Boolean> {
 
 // TODO(zzn): move to HsyUtil
 let hsyListingToLink = function(uid:string) {
-  return `http://www.haoshiyou.org/#/listing/${escape(uid)}?referrer=hsybot-realtime-generation`;
-}
+  return `http://www.haoshiyou.org/#/listing/${escape(uid)}?referrer=hsybot-realtime-generation&utm_source=haoshiyou-bot&utm_campaign=message_generation`;
+};
 
 let maybeDownsizeKeyRoom = async function(keyRoom: Room, c:Contact) {
   if (/老友/.test(keyRoom.topic())) return;
@@ -278,7 +278,7 @@ let maybeDownsizeKeyRoom = async function(keyRoom: Room, c:Contact) {
               `待得比较久了，如果你已经在群里找到室友或者房子，恭喜你！`  +
               `请联系群主 周载南（微信号xinbenlv）加入"老友群"，` :
               `没有按照规则修改群昵称，`) +
-          `这里我先把你挪出本群哈，随时加我（小助手，微信号haoshiyou-bot2）重新入群。` + hsyReferMsg;
+          `这里我先把你挪出本群哈，随时加我（小助手，微信号haoshiyou-bot）重新入群。` + hsyReferMsg;
       await c.say(msg);
       await keyRoom.del(c);
     }));
