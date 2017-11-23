@@ -1,5 +1,6 @@
 import {HsyListing} from "../loopbacksdk/models/HsyListing";
 import {HsyUser} from "../loopbacksdk/models/HsyUser";
+import {HsyGroupEnum} from './model';
 const config = {
   "loopback": {
     "http://haoshiyou-server-dev.herokuapp.com": {
@@ -37,6 +38,26 @@ export class LoopbackQuerier {
         });
     return result[0].body[0];
   }
+  public async getLatestSomeHsyListing(hsyGroupEnum:HsyGroupEnum, limit:number = 10):Promise<HsyListing[]> {
+    let req = loopback
+        .get('HsyListings')
+        .qs({filter:
+            JSON.stringify({
+              where: {
+                hsyGroupEnum: HsyGroupEnum[hsyGroupEnum]
+              },
+              order: 'lastUpdated DESC',
+              limit: limit,
+            })
+        })
+        .request();
+
+    let result = await req
+        .catch((err) => {
+          console.log(JSON.stringify(err));
+        });
+    return result[0].body;
+  }
 
   public async setHsyListing(listing) {
     let req = loopback.put('HsyListings')
@@ -48,7 +69,6 @@ export class LoopbackQuerier {
           console.log(JSON.stringify(err));
         });
     let listings:HsyListing[] = result[0].body;
-    console.log(JSON.stringify(listings));
     return listings.length > 0 ? listing[0] : null;
   }
 

@@ -1,5 +1,4 @@
 import {Room, Contact, Message, MsgType} from "wechaty";
-import {escape} from "querystring";
 import { createWriteStream }  from 'fs';
 import { Logger, LoggerConfig } from "log4ts";
 
@@ -214,7 +213,7 @@ let maybeExtractPostingMessage = async function(m:Message):Promise<Boolean> {
           HsyUtil.getHsyGroupEnum(m.room().topic()), publicId);
       await m.from().say(`你好，你${
           WeChatyApiX.isTalkingToMePrivately(m) ? '私下' : `在${m.room().topic()} 里面`}
-        发的租房图片我们已经同时发布到好室友™网站和App上了，欢迎查看和分享，链接为 ${hsyListingToLink(uid)}`);
+        发的租房图片我们已经同时发布到好室友™网站和App上了，欢迎查看和分享，链接为 ${HsyUtil.getLinkByHsyListingUid(uid)}&utm_campaign=message_generation`);
     } else {
       logger.info(`${m.from().name()} say: ${m.content()}`);
       if (m.content().length >= 80 &&
@@ -222,17 +221,12 @@ let maybeExtractPostingMessage = async function(m:Message):Promise<Boolean> {
         let uid = await HsyBotLogger.logListing(m, HsyUtil.getHsyGroupEnum(m.room().topic()));
         await m.from().say(`你好，你${
             WeChatyApiX.isTalkingToMePrivately(m) ? '私下' : `在${m.room().topic()} 里面`}
-        发的租房信息我们已经同时发布到好室友™网站和App上了，欢迎查看和分享，链接为 ${hsyListingToLink(uid)}`);
+        发的租房信息我们已经同时发布到好室友™网站和App上了，欢迎查看和分享，链接为 ${HsyUtil.getLinkByHsyListingUid(uid)}&utm_campaign=message_generation`);
       }
     }
     return true;
   }
   return false;
-};
-
-// TODO(zzn): move to HsyUtil
-let hsyListingToLink = function(uid:string) {
-  return `http://www.haoshiyou.org/#/listing/${escape(uid)}?referrer=hsybot-realtime-generation&utm_source=haoshiyou-bot&utm_campaign=message_generation`;
 };
 
 let maybeDownsizeKeyRoom = async function(keyRoom: Room, c:Contact) {

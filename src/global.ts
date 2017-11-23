@@ -39,6 +39,7 @@ export const ALL_RENTAL_HSY_GROUP_ENUMS:Array<any> = [
   HsyGroupEnum.MidPeninsula,
   HsyGroupEnum.Seattle,
   HsyGroupEnum.ShortTerm,
+  HsyGroupEnum.TestGroup,
 ];
 
 export let getStringFromHsyGroupEnum = function(input:HsyGroupEnum):string {

@@ -2,6 +2,7 @@ import {Message, Contact, Room} from "wechaty";
 import {HsyGroupEnum} from "./model";
 import {GROUP_DICT, getStringFromHsyGroupEnum, ALL_HSY_GROUP_ENUMS, ALL_RENTAL_HSY_GROUP_ENUMS} from "./global";
 import {Logger} from "log4ts";
+import {escape} from "querystring";
 
 const logger = Logger.getLogger(`hsy-util`);
 
@@ -171,6 +172,14 @@ export class HsyUtil {
     } else if (/老友/.test(content)) {
       return HsyGroupEnum.OldFriends;
     } else return HsyGroupEnum.None;
+  };
+
+  public static getLinkByHsyListingUid = function(uid:string) {
+    return `http://www.haoshiyou.org/#/listing/${escape(uid)}?utm_source=bot`;
+  };
+
+  public static getLinkByHsyGroupEnum = function(hsyGroupEnum:HsyGroupEnum) {
+    return `http://www.haoshiyou.org/?area=${HsyGroupEnum[hsyGroupEnum]}&utm_source=bot`;
   }
 }
 
