@@ -3,6 +3,8 @@ import {HsyGroupEnum} from "./model";
 import {GROUP_DICT, getStringFromHsyGroupEnum, ALL_HSY_GROUP_ENUMS, ALL_RENTAL_HSY_GROUP_ENUMS} from "./global";
 import {Logger} from "log4ts";
 import {escape} from "querystring";
+import {HsyListing} from '../loopbacksdk/models/HsyListing';
+import {LoopbackQuerier} from './loopback-querier';
 
 const logger = Logger.getLogger(`hsy-util`);
 
@@ -180,6 +182,18 @@ export class HsyUtil {
 
   public static getLinkByHsyGroupEnum = function(hsyGroupEnum:HsyGroupEnum) {
     return `http://www.haoshiyou.org/?area=${HsyGroupEnum[hsyGroupEnum]}&utm_source=bot`;
+  };
+
+  public static generateMsgByHsyGroupEnum = async function (hsyGroupEnum:HsyGroupEnum) {
+    let lq:LoopbackQuerier = new LoopbackQuerier();
+    let lists = await lq.getLatestSomeHsyListing(hsyGroupEnum, 5);
+    let msg = `${getStringFromHsyGroupEnum(hsyGroupEnum)}群最新的帖子如下:\n`;
+    msg += lists.map((listing: HsyListing) => {
+      let picIndicator = listing.imageIds.length > 0 ? `[${listing.imageIds.length}图]` : '';
+      return `  ${listing.lastUpdated.toString().slice(0, 10)}${picIndicator}: ${listing.title}: ${HsyUtil.getLinkByHsyListingUid(listing.uid)}&utm_campaign=cron`
+    }).join('\n');
+    msg += `\n\n\n更多帖子尽在 ${HsyUtil.getLinkByHsyGroupEnum(hsyGroupEnum)}&utm_campaign=cron`;
+    return msg;
   }
 }
 

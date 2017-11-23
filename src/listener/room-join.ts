@@ -94,8 +94,13 @@ let maybeRemoveBlacklistInviteeAndInviter = async function(
   }
 };
 let sendWelcomeMessage = async function(room:Room, inviteeList:Contact[], inviter:Contact) {
-  let areaEnum = HsyUtil.getHsyGroupEnum(room.topic());
+  let hsyGroupenum = HsyUtil.getHsyGroupEnum(room.topic());
   let msg = `欢迎新群友${inviteeList.map(c=>`@${c.name()}${magicChar}`).join(',')}入群，
-想查看入群之前的帖子，点此 ${HsyUtil.getLinkByHsyGroupEnum(areaEnum)}&utm_campaign=view_group_tap`;
+想查看入群之前的帖子，点此 ${HsyUtil.getLinkByHsyGroupEnum(hsyGroupenum)}&utm_campaign=view_group_tap`;
   await room.say(msg);
+  let msg2 = await HsyUtil.generateMsgByHsyGroupEnum(hsyGroupenum);
+  await room.say(msg2);
+  if (!inviter.self()) {
+    await room.say(`感谢${inviter.name()}的邀请`);
+  }
 };

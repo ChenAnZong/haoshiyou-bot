@@ -20,6 +20,7 @@
   "scripts": {
     "start": "docker run --env CLOUDINARY_SECRET=$CLOUDINARY_SECRET -ti --volume=\"$(pwd)\":/bot --rm zixia/wechaty src/main.ts",
     "direct": "node src/main.js",
+    "ts": "ts-node src/main.ts",
     "preinstall-chromedriver": "npm install",
     "install-chromedriver": "node node_modules/chromedriver/install.js",
     "pretest_e2e": "npm run install-chromedriver",

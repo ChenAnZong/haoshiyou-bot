@@ -1,24 +1,16 @@
-import {LoopbackQuerier} from './loopback-querier';
 import {HsyUtil} from './hsy-util';
 import Logger from 'log4ts/build/Logger';
-import {HsyListing} from '../loopbacksdk/models/HsyListing';
-import {getStringFromHsyGroupEnum} from './global';
+import {ALL_RENTAL_HSY_GROUP_ENUMS} from './global';
+
+
 const reportRecentListingsToGroup = async function() {
   const logger = Logger.getLogger(`cronjob-reportRecentListingsToGroup`);
-  let lq:LoopbackQuerier = new LoopbackQuerier();
   try {
-    let allRentalGroups = await HsyUtil.findAllRentalHsyGroups();
-    for (let group of allRentalGroups) {
-        let hsyGroupEnum = HsyUtil.getHsyGroupEnum(group.topic());
-        let lists = await lq.getLatestSomeHsyListing(hsyGroupEnum, 5);
-        let msg = `亲爱的${getStringFromHsyGroupEnum(hsyGroupEnum)}群友们，本群最新的帖子如下:\n`;
-        msg += lists.map((listing:HsyListing) => {
-          let picIndicator = listing.imageIds.length > 0 ? `[${listing.imageIds.length}图]` : '';
-          return `  ${listing.lastUpdated.toString().slice(0, 10)}${picIndicator}: ${listing.title}: ${HsyUtil.getLinkByHsyListingUid(listing.uid)}&utm_campaign=cron`
-        }).join('\n');
-        msg += `\n\n\n更多帖子尽在 ${HsyUtil.getLinkByHsyGroupEnum(hsyGroupEnum)}&utm_campaign=cron`;
-        await group.say(msg);
-        logger.debug(`Says the following to ${group.topic()}:\n` + msg);
+    for (let hsyGroupEnum of ALL_RENTAL_HSY_GROUP_ENUMS) {
+      let msg = await HsyUtil.generateMsgByHsyGroupEnum(hsyGroupEnum);
+      let group = await HsyUtil.findHsyRoomByEnum(hsyGroupEnum);
+      await group.say(msg);
+      logger.debug(`Says the following to ${group.topic()}:\n` + msg);
     }
 
   } catch (e) {
