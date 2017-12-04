@@ -2,23 +2,27 @@
 
 declare var Object: any;
 export interface HsyUserInterface {
-  avatarId?: string;
-  id: string;
-  name?: string;
-  pushNotificationRegIds?: Array<string>;
-  weixin?: string;
-  created?: Date;
-  lastUpdated?: Date;
+  "avatarId"?: string;
+  "contactEmail"?: string;
+  "contactPhone"?: string;
+  "created"?: Date;
+  "id": string;
+  "lastUpdated"?: Date;
+  "name"?: string;
+  "pushNotificationRegIds"?: Array<any>;
+  "weixin"?: string;
 }
 
 export class HsyUser implements HsyUserInterface {
-  avatarId: string = '';
-  id: string = '';
-  name: string = '';
-  pushNotificationRegIds: Array<string> = <any>[];
-  weixin: string = '';
-  created: Date = new Date(0);
-  lastUpdated: Date = new Date(0);
+  "avatarId": string = '';
+  "contactEmail": string = '';
+  "contactPhone": string = '';
+  "created": Date = new Date(0);
+  "id": string = '';
+  "lastUpdated": Date = new Date(0);
+  "name": string = '';
+  "pushNotificationRegIds": Array<any> = <any>[];
+  "weixin": string = '';
   constructor(data?: HsyUserInterface) {
     Object.assign(this, data);
   }
@@ -37,7 +41,7 @@ export class HsyUser implements HsyUserInterface {
   **/
   public static factory(data: HsyUserInterface): HsyUser{
     return new HsyUser(data);
-  }  
+  }
   /**
   * @method getModelDefinition
   * @author Julien Ledun
@@ -49,34 +53,44 @@ export class HsyUser implements HsyUserInterface {
     return {
       name: 'HsyUser',
       plural: 'HsyUsers',
+      path: 'HsyUsers',
+      idName: 'id',
       properties: {
-        avatarId: {
+        "avatarId": {
           name: 'avatarId',
           type: 'string'
         },
-        id: {
-          name: 'id',
+        "contactEmail": {
+          name: 'contactEmail',
           type: 'string'
         },
-        name: {
-          name: 'name',
+        "contactPhone": {
+          name: 'contactPhone',
           type: 'string'
         },
-        pushNotificationRegIds: {
-          name: 'pushNotificationRegIds',
-          type: 'Array&lt;string&gt;'
-        },
-        weixin: {
-          name: 'weixin',
-          type: 'string'
-        },
-        created: {
+        "created": {
           name: 'created',
           type: 'Date'
         },
-        lastUpdated: {
+        "id": {
+          name: 'id',
+          type: 'string'
+        },
+        "lastUpdated": {
           name: 'lastUpdated',
           type: 'Date'
+        },
+        "name": {
+          name: 'name',
+          type: 'string'
+        },
+        "pushNotificationRegIds": {
+          name: 'pushNotificationRegIds',
+          type: 'Array&lt;any&gt;'
+        },
+        "weixin": {
+          name: 'weixin',
+          type: 'string'
         },
       },
       relations: {

@@ -10,14 +10,14 @@ import { JSONSearchParams } from '../core/search.params';
 import { ErrorHandler } from '../core/error.service';
 import { Subject } from 'rxjs/Subject';
 import { Observable } from 'rxjs/Rx';
-import { HsyListing } from '../../models/HsyListing';
+import { HsyInteraction } from '../../models/HsyInteraction';
 
 
 /**
- * Api services for the `HsyListing` model.
+ * Api services for the `HsyInteraction` model.
  */
 @Injectable()
-export class HsyListingApi extends BaseLoopBackApi {
+export class HsyInteractionApi extends BaseLoopBackApi {
 
   constructor(
     @Inject(Http) protected http: Http,
@@ -31,9 +31,9 @@ export class HsyListingApi extends BaseLoopBackApi {
 
   /**
    * The name of the model represented by this $resource,
-   * i.e. `HsyListing`.
+   * i.e. `HsyInteraction`.
    */
   public getModelName() {
-    return "HsyListing";
+    return "HsyInteraction";
   }
 }

@@ -1,6 +1,6 @@
 /* tslint:disable */
 import { Injectable, Inject, Optional } from '@angular/core';
-import { Http, Headers, Request } from '@angular/http';
+import { Http, Headers, Request, RequestOptions } from '@angular/http';
 import { NgModule, ModuleWithProviders } from '@angular/core';
 import { JSONSearchParams } from './search.params';
 import { ErrorHandler } from './error.service';
@@ -41,294 +41,368 @@ export abstract class BaseLoopBackApi {
   ) {
     this.model = this.models.get(this.getModelName());
   }
-
   /**
-   * Process request
-   * @param string  method      Request method (GET, POST, PUT)
-   * @param string  url         Request url (my-host/my-url/:id)
-   * @param any     routeParams Values of url parameters
-   * @param any     urlParams   Parameters for building url (filter and other)
-   * @param any     postBody    Request postBody
-   * @param boolean isio        Request socket connection (When IO is enabled)
-   */
+   * @method request
+   * @param {string}  method      Request method (GET, POST, PUT)
+   * @param {string}  url         Request url (my-host/my-url/:id)
+   * @param {any}     routeParams Values of url parameters
+   * @param {any}     urlParams   Parameters for building url (filter and other)
+   * @param {any}     postBody    Request postBody
+   * @return {Observable<any>}
+   * @description
+   * This is a core method, every HTTP Call will be done from here, every API Service will
+   * extend this class and use this method to get RESTful communication.
+   **/
   public request(
-    method      : string,
-    url         : string,
-    routeParams : any = {},
-    urlParams   : any = {},
-    postBody    : any = {}
+    method         : string,
+    url            : string,
+    routeParams    : any = {},
+    urlParams      : any = {},
+    postBody       : any = {},
+    pubsub         : boolean = false,
+    customHeaders? : Function
   ): Observable<any> {
-
-    let headers = new Headers();
-    headers.append('Content-Type', 'application/json');
-
+    // Transpile route variables to the actual request Values
+    Object.keys(routeParams).forEach((key: string) => {
+      url = url.replace(new RegExp(":" + key + "(\/|$)", "g"), routeParams[key] + "$1")
+    });
+    if (pubsub) {
+      console.info('SDK: PubSub functionality is disabled, generate SDK using -io enabled');
+    } else {
+      // Headers to be sent
+      let headers: Headers = new Headers();
+      headers.append('Content-Type', 'application/json');
+      // Authenticate request
+      this.authenticate(url, headers);
+      // Body fix for built in remote methods using "data", "options" or "credentials
+      // that are the actual body, Custom remote method properties are different and need
+      // to be wrapped into a body object
+      let body: any;
+      let postBodyKeys = typeof postBody === 'object' ? Object.keys(postBody) : []
+      if (postBodyKeys.length === 1) {
+        body = postBody[postBodyKeys.shift()];
+      } else {
+        body = postBody;
+      }
+      let filter: string = '';
+      // Separate filter object from url params and add to search query
+      if (urlParams.filter) {
+        if (LoopBackConfig.isHeadersFilteringSet()) {
+          headers.append('filter', JSON.stringify(urlParams.filter));
+        } else {
+          filter = `?filter=${ encodeURIComponent(JSON.stringify(urlParams.filter))}`;
+        }
+        delete urlParams.filter;
+      }
+      // Separate where object from url params and add to search query
+      /**
+      CODE BELOW WILL GENERATE THE FOLLOWING ISSUES:
+      - https://github.com/mean-expert-official/loopback-sdk-builder/issues/356
+      - https://github.com/mean-expert-official/loopback-sdk-builder/issues/328 
+      if (urlParams.where) {
+        headers.append('where', JSON.stringify(urlParams.where));
+        delete urlParams.where;
+      }
+      **/
+      if (typeof customHeaders === 'function') {
+        headers = customHeaders(headers);
+      }
+      this.searchParams.setJSON(urlParams);
+      let request: Request = new Request(
+        new RequestOptions({
+          headers        : headers,
+          method         : method,
+          url            : `${url}${filter}`,
+          search         : Object.keys(urlParams).length > 0 ? this.searchParams.getURLSearchParams() : null,
+          body           : body ? JSON.stringify(body) : undefined,
+          withCredentials: LoopBackConfig.getRequestOptionsCredentials()
+        })
+      );
+      return this.http.request(request)
+        .map((res: any) => (res.text() != "" ? res.json() : {}))
+        .catch((e) => this.errorHandler.handleError(e));
+    }
+  }
+  /**
+   * @method authenticate
+   * @author Jonathan Casarrubias <t: johncasarrubias, gh: mean-expert-official>
+   * @license MIT
+   * @param {string} url Server URL
+   * @param {Headers} headers HTTP Headers
+   * @return {void}
+   * @description
+   * This method will try to authenticate using either an access_token or basic http auth
+   */
+  public authenticate<T>(url: string, headers: Headers): void {
     if (this.auth.getAccessTokenId()) {
       headers.append(
         'Authorization',
         LoopBackConfig.getAuthPrefix() + this.auth.getAccessTokenId()
       );
     }
-
-    let requestUrl = url;
-    let key: string;
-    for (key in routeParams) {
-      requestUrl = requestUrl.replace(
-        new RegExp(":" + key + "(\/|$)", "g"),
-        routeParams[key] + "$1"
-      );
-    }
-    
-    // Body fix for built in remote methods using "data", "options" or "credentials
-    // that are the actual body, Custom remote method properties are different and need
-    // to be wrapped into a body object
-    let body: any;
-    let postBodyKeys = typeof postBody === 'object' ? Object.keys(postBody) : []
-    if (postBodyKeys.length === 1) {
-      body = postBody[postBodyKeys[0]]
-    } else {
-      body = postBody;
-    }
-    // Separate filter object from url params
-    let filter: string = '';
-    if (urlParams.filter) {
-      filter = `?filter=${ encodeURI(JSON.stringify(urlParams.filter))}`;
-      delete urlParams.filter;
-    }
-
-    this.searchParams.setJSON(urlParams);
-    let request: Request = new Request({
-      headers : headers,
-      method  : method,
-      url     : `${requestUrl}${filter}`,
-      search  : Object.keys(urlParams).length > 0
-              ? this.searchParams.getURLSearchParams() : null,
-      body    : body ? JSON.stringify(body) : undefined
-    });
-    return this.http.request(request)
-      .map((res: any) => (res.text() != "" ? res.json() : {}))
-      .catch((e) => this.errorHandler.handleError(e));
   }
   /**
    * @method create
    * @author Jonathan Casarrubias <t: johncasarrubias, gh: mean-expert-official>
    * @license MIT
+   * @param {T} data Generic data type
+   * @return {Observable<T>}
    * @description
    * Generic create method
    */
-  public create<T>(data: any = {}): Observable<T> {
+  public create<T>(data: T, customHeaders?: Function): Observable<T> {
     return this.request('POST', [
       LoopBackConfig.getPath(),
       LoopBackConfig.getApiVersion(),
-      this.model.getModelDefinition().plural
-    ].join('/'), undefined, undefined, { data }).map((data: T) => this.model.factory(data));
+      this.model.getModelDefinition().path
+    ].join('/'), undefined, undefined, { data }, null, customHeaders).map((data: T) => this.model.factory(data));
   }
   /**
-   * @method create
+   * @method createMany
    * @author Jonathan Casarrubias <t: johncasarrubias, gh: mean-expert-official>
    * @license MIT
+   * @param {T[]} data Generic data type array
+   * @return {Observable<T[]>}
    * @description
-   * Generic create method
+   * Generic create many method
    */
-  public createMany<T>(data: any = {}): Observable<T[]> {
+  public createMany<T>(data: T[], customHeaders?: Function): Observable<T[]> {
     return this.request('POST', [
       LoopBackConfig.getPath(),
       LoopBackConfig.getApiVersion(),
-      this.model.getModelDefinition().plural
-    ].join('/'), undefined, undefined, { data })
+      this.model.getModelDefinition().path
+    ].join('/'), undefined, undefined, { data }, null, customHeaders)
     .map((datum: T[]) => datum.map((data: T) => this.model.factory(data)));
   }
   /**
    * @method findById
    * @author Jonathan Casarrubias <t: johncasarrubias, gh: mean-expert-official>
    * @license MIT
+   * @param {any} data Generic data type
+   * @return {Observable<T>}
    * @description
    * Generic findById method
    */
-  public findById<T>(id: any, filter: LoopBackFilter = {}): Observable<T> {
+  public findById<T>(id: any, filter: LoopBackFilter = {}, customHeaders?: Function): Observable<T> {
     let _urlParams: any = {};
     if (filter) _urlParams.filter = filter;
     return this.request('GET', [
       LoopBackConfig.getPath(),
       LoopBackConfig.getApiVersion(),
-      this.model.getModelDefinition().plural,
+      this.model.getModelDefinition().path,
       ':id'
-    ].join('/'), { id }, _urlParams, undefined).map((data: T) => this.model.factory(data));
+    ].join('/'), { id }, _urlParams, undefined, null, customHeaders)
+    .map((data: T) => this.model.factory(data));
   }
   /**
    * @method find
    * @author Jonathan Casarrubias <t: johncasarrubias, gh: mean-expert-official>
    * @license MIT
+   * @return {Observable<T[+>}
    * @description
    * Generic find method
    */
-  public find<T>(filter: LoopBackFilter = {}): Observable<T[]> {
+  public find<T>(filter: LoopBackFilter = {}, customHeaders?: Function): Observable<T[]> {
     return this.request('GET', [
       LoopBackConfig.getPath(),
       LoopBackConfig.getApiVersion(),
-      this.model.getModelDefinition().plural
-    ].join('/'), undefined, { filter }, undefined)
+      this.model.getModelDefinition().path
+    ].join('/'), undefined, { filter }, undefined, null, customHeaders)
     .map((datum: T[]) => datum.map((data: T) => this.model.factory(data)));
   }
   /**
    * @method exists
    * @author Jonathan Casarrubias <t: johncasarrubias, gh: mean-expert-official>
    * @license MIT
+   * @return {Observable<T[]>}
    * @description
    * Generic exists method
    */
-  public exists<T>(id: any): Observable<T[]> {
+  public exists<T>(id: any, customHeaders?: Function): Observable<T> {
     return this.request('GET', [
       LoopBackConfig.getPath(),
       LoopBackConfig.getApiVersion(),
-      this.model.getModelDefinition().plural,
-      'exists'
-    ].join('/'), { id }, undefined, undefined);
+      this.model.getModelDefinition().path,
+      ':id/exists'
+    ].join('/'), { id }, undefined, undefined, null, customHeaders);
   }
   /**
    * @method findOne
    * @author Jonathan Casarrubias <t: johncasarrubias, gh: mean-expert-official>
    * @license MIT
+   * @return {Observable<T>}
    * @description
    * Generic findOne method
    */
-  public findOne<T>(filter: LoopBackFilter = {}): Observable<T> {
+  public findOne<T>(filter: LoopBackFilter = {}, customHeaders?: Function): Observable<T> {
     return this.request('GET', [
       LoopBackConfig.getPath(),
       LoopBackConfig.getApiVersion(),
-      this.model.getModelDefinition().plural,
+      this.model.getModelDefinition().path,
       'findOne'
-    ].join('/'), undefined, { filter }, undefined).map((data: T) => this.model.factory(data));
+    ].join('/'), undefined, { filter }, undefined, null, customHeaders)
+    .map((data: T) => this.model.factory(data));
   }
   /**
    * @method updateAll
    * @author Jonathan Casarrubias <t: johncasarrubias, gh: mean-expert-official>
    * @license MIT
+   * @return {Observable<T[]>}
    * @description
    * Generic updateAll method
    */
-  public updateAll<T>(where: any = {}, data: T): Observable<T[]> {
+  public updateAll<T>(where: any = {}, data: T, customHeaders?: Function): Observable<{ count: 'number' }> {
     let _urlParams: any = {};
     if (where) _urlParams.where = where;
     return this.request('POST', [
       LoopBackConfig.getPath(),
       LoopBackConfig.getApiVersion(),
-      this.model.getModelDefinition().plural,
+      this.model.getModelDefinition().path,
       'update'
-    ].join('/'), undefined, _urlParams, { data })
-    .map((datum: T[]) => datum.map((data: T) => this.model.factory(data)));
+    ].join('/'), undefined, _urlParams, { data }, null, customHeaders);
   }
   /**
    * @method deleteById
    * @author Jonathan Casarrubias <t: johncasarrubias, gh: mean-expert-official>
    * @license MIT
+   * @return {Observable<T>}
    * @description
    * Generic deleteById method
    */
-  public deleteById<T>(id: any): Observable<T> {
+  public deleteById<T>(id: any, customHeaders?: Function): Observable<T> {
     return this.request('DELETE', [
       LoopBackConfig.getPath(),
       LoopBackConfig.getApiVersion(),
-      this.model.getModelDefinition().plural,
+      this.model.getModelDefinition().path,
       ':id'
-    ].join('/'), { id }, undefined, undefined).map((data: T) => this.model.factory(data));
+    ].join('/'), { id }, undefined, undefined, null, customHeaders)
+    .map((data: T) => this.model.factory(data));
   }
   /**
    * @method count
    * @author Jonathan Casarrubias <t: johncasarrubias, gh: mean-expert-official>
    * @license MIT
+   * @return {Observable<{ count: number }>}
    * @description
    * Generic count method
    */
-  public count(where: any = {}): Observable<{ count: number }> {
+  public count(where: any = {}, customHeaders?: Function): Observable<{ count: number }> {
     let _urlParams: any = {};
     if (where) _urlParams.where = where;
     return this.request('GET', [
       LoopBackConfig.getPath(),
       LoopBackConfig.getApiVersion(),
-      this.model.getModelDefinition().plural,
+      this.model.getModelDefinition().path,
       'count'
-    ].join('/'), undefined, _urlParams, undefined);
+    ].join('/'), undefined, _urlParams, undefined, null, customHeaders);
   }
   /**
    * @method updateAttributes
    * @author Jonathan Casarrubias <t: johncasarrubias, gh: mean-expert-official>
    * @license MIT
+   * @return {Observable<T>}
    * @description
    * Generic updateAttributes method
    */
-  public updateAttributes<T>(id: any, data: T): Observable<T> {
+  public updateAttributes<T>(id: any, data: T, customHeaders?: Function): Observable<T> {
     return this.request('PUT', [
       LoopBackConfig.getPath(),
       LoopBackConfig.getApiVersion(),
-      this.model.getModelDefinition().plural,
+      this.model.getModelDefinition().path,
       ':id'
-    ].join('/'), { id }, undefined, { data }).map((data: T) => this.model.factory(data));
+    ].join('/'), { id }, undefined, { data }, null, customHeaders)
+    .map((data: T) => this.model.factory(data));
   }
   /**
    * @method upsert
    * @author Jonathan Casarrubias <t: johncasarrubias, gh: mean-expert-official>
    * @license MIT
+   * @return {Observable<T>}
    * @description
    * Generic upsert method
    */
-  public upsert<T>(data: any = {}): Observable<T> {
+  public upsert<T>(data: any = {}, customHeaders?: Function): Observable<T> {
     return this.request('PUT', [
       LoopBackConfig.getPath(),
       LoopBackConfig.getApiVersion(),
-      this.model.getModelDefinition().plural,
-    ].join('/'), undefined, undefined, { data }).map((data: T) => this.model.factory(data));
+      this.model.getModelDefinition().path,
+    ].join('/'), undefined, undefined, { data }, null, customHeaders)
+    .map((data: T) => this.model.factory(data));
+  }
+  /**
+   * @method upsertPatch
+   * @author Jonathan Casarrubias <t: johncasarrubias, gh: mean-expert-official>
+   * @license MIT
+   * @return {Observable<T>}
+   * @description
+   * Generic upsert method using patch http method
+   */
+  public upsertPatch<T>(data: any = {}, customHeaders?: Function): Observable<T> {
+    return this.request('PATCH', [
+      LoopBackConfig.getPath(),
+      LoopBackConfig.getApiVersion(),
+      this.model.getModelDefinition().path,
+    ].join('/'), undefined, undefined, { data }, null, customHeaders)
+    .map((data: T) => this.model.factory(data));
   }
   /**
    * @method upsertWithWhere
    * @author Jonathan Casarrubias <t: johncasarrubias, gh: mean-expert-official>
    * @license MIT
+   * @return {Observable<T>}
    * @description
    * Generic upsertWithWhere method
    */
-  public upsertWithWhere<T>(where: any = {}, data: any = {}): Observable<T> {
+  public upsertWithWhere<T>(where: any = {}, data: any = {}, customHeaders?: Function): Observable<T> {
     let _urlParams: any = {};
     if (where) _urlParams.where = where;
-    return this.request('PUT', [
+    return this.request('POST', [
       LoopBackConfig.getPath(),
       LoopBackConfig.getApiVersion(),
-      this.model.getModelDefinition().plural,
+      this.model.getModelDefinition().path,
       'upsertWithWhere'
-    ].join('/'), undefined, _urlParams, { data }).map((data: T) => this.model.factory(data));
+    ].join('/'), undefined, _urlParams, { data }, null, customHeaders)
+    .map((data: T) => this.model.factory(data));
   }
   /**
    * @method replaceOrCreate
    * @author Jonathan Casarrubias <t: johncasarrubias, gh: mean-expert-official>
    * @license MIT
+   * @return {Observable<T>}
    * @description
    * Generic replaceOrCreate method
    */
-  public replaceOrCreate<T>(data: any = {}): Observable<T> {
-    return this.request('PUT', [
+  public replaceOrCreate<T>(data: any = {}, customHeaders?: Function): Observable<T> {
+    return this.request('POST', [
       LoopBackConfig.getPath(),
       LoopBackConfig.getApiVersion(),
-      this.model.getModelDefinition().plural,
+      this.model.getModelDefinition().path,
       'replaceOrCreate'
-    ].join('/'), undefined, undefined, { data }).map((data: T) => this.model.factory(data));
+    ].join('/'), undefined, undefined, { data }, null, customHeaders)
+    .map((data: T) => this.model.factory(data));
   }
   /**
    * @method replaceById
    * @author Jonathan Casarrubias <t: johncasarrubias, gh: mean-expert-official>
    * @license MIT
+   * @return {Observable<T>}
    * @description
    * Generic replaceById method
    */
-  public replaceById<T>(id: any, data: any = {}): Observable<T> {
+  public replaceById<T>(id: any, data: any = {}, customHeaders?: Function): Observable<T> {
     return this.request('POST', [
       LoopBackConfig.getPath(),
       LoopBackConfig.getApiVersion(),
-      this.model.getModelDefinition().plural,
+      this.model.getModelDefinition().path,
       ':id', 'replace'
-    ].join('/'), { id }, undefined, { data }).map((data: T) => this.model.factory(data));
+    ].join('/'), { id }, undefined, { data }, null, customHeaders)
+    .map((data: T) => this.model.factory(data));
   }
   /**
    * @method createChangeStream
    * @author Jonathan Casarrubias <t: johncasarrubias, gh: mean-expert-official>
    * @license MIT
+   * @return {Observable<any>}
    * @description
    * Generic createChangeStream method
    */
@@ -339,7 +413,7 @@ export abstract class BaseLoopBackApi {
       var source = new EventSource([
         LoopBackConfig.getPath(),
         LoopBackConfig.getApiVersion(),
-        this.model.getModelDefinition().plural,
+        this.model.getModelDefinition().path,
         'change-stream'
       ].join('/'));
       source.addEventListener('data', emit);
@@ -353,6 +427,7 @@ export abstract class BaseLoopBackApi {
    * @method getModelName
    * @author Jonathan Casarrubias <t: johncasarrubias, gh: mean-expert-official>
    * @license MIT
+   * @return {string}
    * @description
    * Abstract getModelName method
    */
