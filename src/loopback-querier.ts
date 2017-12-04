@@ -3,7 +3,7 @@ import {HsyUser} from "../loopbacksdk/models/HsyUser";
 import {HsyGroupEnum} from './model';
 const config = {
   "loopback": {
-    "http://haoshiyou-server-dev.herokuapp.com": {
+    "http://haoshiyou-server-prod.herokuapp.com": {
       "__domain": {
         "auth": {
           "auth": {"bearer": "[0]"}

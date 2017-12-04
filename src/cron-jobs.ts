@@ -2,7 +2,6 @@ import {HsyUtil} from './hsy-util';
 import Logger from 'log4ts/build/Logger';
 import {ALL_RENTAL_HSY_GROUP_ENUMS} from './global';
 
-
 const reportRecentListingsToGroup = async function() {
   const logger = Logger.getLogger(`cronjob-reportRecentListingsToGroup`);
   try {
