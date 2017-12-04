@@ -78,6 +78,7 @@ export class HsyBotLogger {
     let hsyListing:HsyListing = new HsyListing();
     hsyListing.ownerId = HsyUtil.getHsyUserIdFromName(c.name());
     hsyListing.lastUpdated = new Date();
+    hsyListing.latestUpdatedOrBump = hsyListing.lastUpdated;
     hsyListing.uid = HsyUtil.getHsyUserIdFromName(c.name());
     hsyListing.content = cleanContent;
     hsyListing.listingTypeEnum = HsyListingTypeEnum[
@@ -117,7 +118,7 @@ export class HsyBotLogger {
       hsyListing.imageIds = hsyListing.imageIds.concat(imagePublicId);
     }
     hsyListing.lastUpdated = new Date();
-
+    hsyListing.latestUpdatedOrBump = hsyListing.lastUpdated;
     HsyBotLogger.logger.debug(`Updating image ${imagePublicId} for contact ${uid}`);
     let updatedHsyListing = await HsyBotLogger.lq.setHsyListing(hsyListing);
 
