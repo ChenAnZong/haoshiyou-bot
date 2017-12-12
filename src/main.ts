@@ -57,6 +57,7 @@ const loadListener = (evt) => {
     console.log(`bound listener: ${evt}`);
   } catch (e) {
     fn = () => void 0;
+    console.log(e);
     if (e.toString().indexOf('Cannot find module') > -1) {
       console.warn(`listener ${evt} is not defined.`);
     } else {
@@ -87,32 +88,32 @@ const purgeCache = (moduleName) => {
 };
 configLogger();
 let eventHandler = {};
-
-if (!isProd) { // start a watcher only if it's not production environment.
-  watch('./src/listener', (e, filename) => {
-    let evt = filename.substring(0, filename.length - 3);
-    console.log(`${e}: ${filename}`);
-
-    if (EVENT_LIST.indexOf(evt) > -1) {
-      if (e === 'change') {
-        console.log(`${evt} listener reloaded.`);
-        purgeCache(`./listener/${evt}`);
-        // It may read an empty file, if not use setTimeout
-        setTimeout(() => {
-          bot.removeListener(evt, eventHandler[evt]);
-          //console.log('fileContent: ' + fs.readFileSync(`./listener/${evt}.js`));
-          eventHandler[evt] = loadListener(evt);
-          bot.on(evt, eventHandler[evt]);
-        }, 1000);
-      } else if (e === 'rename') {
-        console.log(`${evt} listener removed.`);
-        bot.removeListener(evt, eventHandler[evt]);
-        eventHandler[evt] = () => void 0;
-        bot.on(evt, eventHandler[evt]);
-      }
-    }
-  });
-}
+//
+// if (!isProd) { // start a watcher only if it's not production environment.
+//   watch('./src/listener', (e, filename) => {
+//     let evt = filename.substring(0, filename.length - 3);
+//     console.log(`${e}: ${filename}`);
+//
+//     if (EVENT_LIST.indexOf(evt) > -1) {
+//       if (e === 'change') {
+//         console.log(`${evt} listener reloaded.`);
+//         purgeCache(`./listener/${evt}`);
+//         // It may read an empty file, if not use setTimeout
+//         setTimeout(() => {
+//           bot.removeListener(evt, eventHandler[evt]);
+//           //console.log('fileContent: ' + fs.readFileSync(`./listener/${evt}.js`));
+//           eventHandler[evt] = loadListener(evt);
+//           bot.on(evt, eventHandler[evt]);
+//         }, 1000);
+//       } else if (e === 'rename') {
+//         console.log(`${evt} listener removed.`);
+//         bot.removeListener(evt, eventHandler[evt]);
+//         eventHandler[evt] = () => void 0;
+//         bot.on(evt, eventHandler[evt]);
+//       }
+//     }
+//   });
+// }
 
 // Bind events
 EVENT_LIST.forEach(evt => {

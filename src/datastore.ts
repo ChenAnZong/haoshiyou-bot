@@ -6,6 +6,8 @@ import { Logger, LoggerConfig } from "log4ts";
 import {HsyUtil} from "./hsy-util";
 import {HsyBotLoggerType, HsyGroupEnum, HsyListingTypeEnum} from "./model";
 import {getStringFromHsyGroupEnum} from "./global";
+import {HsyExtractor} from '../haoshiyou-ai/extractor';
+import {HsyUser} from "../loopbacksdk/index";
 
 const file = 'log.json';
 const fileListings = 'potential-posting.json';
@@ -89,7 +91,21 @@ export class HsyBotLogger {
     hsyListing.title = cleanContent.slice(0, 25);
     hsyListing.hsyGroupEnum = HsyGroupEnum[hsyGroupEnum];
     hsyListing.wechatId = m.from().weixin();
+    hsyListing.price = HsyExtractor.extractPrice(m.content(), null);
+    hsyListing.addressLine = HsyExtractor.extractFullAddr(m.content(), null);
+    hsyListing.addressZipcode = HsyExtractor.extractZipcode(m.content(), null);
+    hsyListing.addressCity = HsyExtractor.extractCity(m.content(), null);
+    hsyListing.location = await HsyExtractor.maybeExtractGeoPoint(
+        hsyListing.addressLine, hsyListing.addressZipcode, hsyListing.addressCity);
     await HsyBotLogger.lq.setHsyListing(hsyListing);
+    let phone = HsyExtractor.extractPhone(m.content(), null);
+    let email = HsyExtractor.extractEmail(m.content(), null);
+    let wechat = HsyExtractor.extractWeChat(m.content(), null) || hsyListing.wechatId;
+    let updateUser = <HsyUser>{};
+    updateUser.weixin = wechat;
+    updateUser.contactEmail = email;
+    updateUser.contactPhone = phone;
+    if (phone || email || wechat) await HsyBotLogger.lq.updateHsyUserAttribute(hsyListing.ownerId, updateUser);
     HsyBotLogger.logger.debug(`Successfully stored ${JSON.stringify(hsyListing)}`);
     await jsonfile.writeFileSync(fileListings, listing, {flag: 'a'});
     return hsyListing.uid;

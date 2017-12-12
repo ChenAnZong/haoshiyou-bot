@@ -2,6 +2,7 @@ import {HsyBotLogger} from "../datastore";
 import { Logger, LoggerConfig } from "log4ts";
 const logger = Logger.getLogger(`scan`);
 
+
 exports = module.exports = async function onScan(url, code) {
   switch (code) {
     case 408:

@@ -102,4 +102,18 @@ export class LoopbackQuerier {
     console.log(JSON.stringify(users));
     return result;
   }
+
+  public async updateHsyUserAttribute(userId, kv:object) {
+    let req = loopback.put(`HsyUsers/${userId}`)
+        .json(kv)
+        .request();
+
+    let result = await req
+        .catch((err) => {
+          console.log(JSON.stringify(err));
+        });
+    let users:HsyUser[] = result[0].body;
+    console.log(JSON.stringify(users));
+    return result;
+  }
 }
