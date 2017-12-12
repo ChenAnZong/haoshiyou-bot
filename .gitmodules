@@ -1,0 +1,3 @@
+[submodule "haoshiyou-ai"]
+	path = haoshiyou-ai
+	url = git@github.com:xinbenlv/haoshiyou-ai.git
