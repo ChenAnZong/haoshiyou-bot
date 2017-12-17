@@ -2,10 +2,7 @@
   "name": "haoshiyou-bot",
   "version": "2.0.0",
   "description": "Second generation of haoshiyou-bot",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
+  "main": "main.js",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/xinbenlv/haoshiyou-bot.git"
@@ -19,5 +16,15 @@
   "bugs": {
     "url": "https://github.com/xinbenlv/haoshiyou-bot/issues"
   },
-  "homepage": "https://github.com/xinbenlv/haoshiyou-bot#readme"
+  "start": "docker run -ti --volume=\"$(pwd)\":/bot --rm zixia/wechaty src/main.ts",
+  "direct": "node src/main.js",
+  "ts": "ts-node src/main.ts",
+  "homepage": "https://github.com/xinbenlv/haoshiyou-bot#readme",
+  "dependencies": {
+    "wechaty": "^0.13.36"
+  },
+  "devDependencies": {
+    "tslint-jsdoc-rules": "^0.1.2",
+    "typescript": "^2.6.2"
+  }
 }
