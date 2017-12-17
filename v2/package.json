@@ -1,0 +1,23 @@
+{
+  "name": "haoshiyou-bot",
+  "version": "2.0.0",
+  "description": "Second generation of haoshiyou-bot",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xinbenlv/haoshiyou-bot.git"
+  },
+  "keywords": [
+    "haoshiyou",
+    "chatbot"
+  ],
+  "author": "Zainan Victor Zhou",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/xinbenlv/haoshiyou-bot/issues"
+  },
+  "homepage": "https://github.com/xinbenlv/haoshiyou-bot#readme"
+}
