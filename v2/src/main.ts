@@ -1,12 +1,25 @@
-import {Message, Contact, Room} from "wechaty";
+import {Message, Contact, Room, MsgType, MediaMessage} from "wechaty";
 import {Logger, LoggerConfig} from "log4ts";
 const PubSub = require(`@google-cloud/pubsub`);
-// Imports the Google Cloud client library
 const GcpSdLogging = require('@google-cloud/logging');
+const cloudinary = require('cloudinary');
+const { Wechaty } = require('wechaty'); // import { Wechaty } from 'wechaty'
+const fs = require('fs');
 
 // Your Google Cloud Platform project ID
 const projectId = 'haoshiyou-dev';
-const keyFile = './.credentials/Haoshiyou-Dev-94b0d8e19b61.json';
+const credentialFolder = '.credentials/';
+const gcpCredentialPath = credentialFolder + 'Haoshiyou-Dev-94b0d8e19b61.json';
+const cloudinaryCredentialPath = credentialFolder + 'cloudinary.json';
+let checkCredExits = function () {
+  console.assert(fs.existsSync(gcpCredentialPath),
+      `The GCP credentials doesn't exist, 
+      please contact xinbenlv@ and download put in path ${gcpCredentialPath}`);
+  console.assert(fs.existsSync(cloudinaryCredentialPath),
+      `The Cloudinary credentials doesn't exist, 
+      please contact xinbenlv@ and download put in path ${cloudinaryCredentialPath}`);
+};
+
 const metadataResource = {
     type: "logging_sink",
     labels: {
@@ -17,13 +30,13 @@ const metadataResource = {
 // Creates a client
 const logging = new GcpSdLogging({
   projectId: projectId,
-  keyFilename: keyFile
+  keyFilename: gcpCredentialPath
 });
 
 // Instantiates a client
 const pubsub = PubSub({
   projectId: projectId,
-  keyFilename: keyFile
+  keyFilename: gcpCredentialPath
 });
 
 // The name of the log to write to
@@ -79,8 +92,37 @@ function sendToStackDriver(label:string, data:any) {
   log.write(sdLogEntry);
 }
 
-let storeWeChatyMessage = function(message:Message) {
+let configCloudinary = function() {
+  const fs = require(`fs`);
+  const credential = JSON.parse(String(fs.readFileSync(cloudinaryCredentialPath)));
+  cloudinary.config(credential);
+};
+
+let storeWeChatyMessage = async function(message:Message) {
   let logObj = JSON.parse(JSON.stringify(message.obj));
+  if (message.type() == MsgType.IMAGE) {
+    let mediaMessage = <MediaMessage>message;
+    console.log(`Received an image!`);
+    let mediaStream = await mediaMessage.readyStream();
+    const promise = new Promise((resolve, reject) => {
+    mediaStream.pipe(cloudinary.v2.uploader.upload_stream(
+          function(error, result){
+            if (error) {
+              reject(error);
+            } else {
+              resolve(result);
+            }
+          }
+      ));
+    });
+    let cloudinaryResult:object = await promise;
+    console.log(cloudinaryResult);
+    logObj['image'] = {
+      vendor: 'cloudinary',
+      public_id: cloudinaryResult['public_id'],
+      etag: cloudinaryResult['etag']
+    }
+  }
   if (message.from() != null) {
     logObj.from_obj = (message.from() as Contact).obj;
   }
@@ -98,10 +140,20 @@ let storeWeChatyMessage = function(message:Message) {
   }
 
   sendToStackDriver('msg-all', logObj);
-  publishMessageToPubSub('msg-all', logObj);
+  await publishMessageToPubSub('msg-all', logObj);
 };
 
-const { Wechaty } = require('wechaty'); // import { Wechaty } from 'wechaty'
+let shouldCareAboutMessage = function(message:Message):boolean {
+  return (!message.room() ||
+      /好室友/.test(message.room().topic())) ||
+      /租|房|屋|室|招|rent|lease/i.test(message.content());
+};
+
+// -------------------------
+
+checkCredExits();
+configCloudinary();
+
 Wechaty.instance() // Singleton
     .on('scan', async (url:string, code:any) => {
       const logger = Logger.getLogger(`scan`);
@@ -124,8 +176,14 @@ Wechaty.instance() // Singleton
       }
     })
     .on('login',       (user:Contact) => console.log(`User ${user} logined`))
-    .on('message',  (message:Message) => {
-      console.log(message);
-      storeWeChatyMessage(message);
+    .on('message',  async (message:Message) => {
+      // console.log(message);
+      if (shouldCareAboutMessage(message)){
+        console.log(`storing ${message}`);
+        await storeWeChatyMessage(message);
+      } else {
+        // ignore
+        console.log(`Ignored ${message}`);
+      }
     })
     .start();

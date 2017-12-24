@@ -25,6 +25,7 @@
   "dependencies": {
     "@google-cloud/logging": "^1.1.1",
     "@google-cloud/pubsub": "^0.16.0",
+    "cloudinary": "^1.6.0",
     "log4ts": "^0.4.2",
     "qrcode-terminal": "^0.11.0",
     "wechaty": "^0.13.36"

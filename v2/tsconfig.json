@@ -3,7 +3,7 @@
     "target": "es2017",
     "module": "commonjs",
     "allowJs": false,
-    "strict": true,
+    "strict": false,
     "baseUrl": "./src/",
     "typeRoots": ["./node_modules/@types"]
   },
