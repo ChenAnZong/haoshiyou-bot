@@ -211,7 +211,7 @@ let maybeExtractPostingMessage = async function(m:Message):Promise<Boolean> {
           `${HsyUtil.getHsyGroupEnum(m.room().topic())}`);
       let uid = await HsyBotLogger.logListingImage(m,
           HsyUtil.getHsyGroupEnum(m.room().topic()), publicId);
-      await m.from().say(`你好，你${
+      if (process.env.FULL_FEATURE) await m.from().say(`你好，你${
           WeChatyApiX.isTalkingToMePrivately(m) ? '私下' : `在${m.room().topic()} 里面`}
         发的租房图片我们已经同时发布到好室友™网站和App上了，欢迎查看和分享，链接为 ${HsyUtil.getLinkByHsyListingUid(uid)}&utm_campaign=message_generation`);
     } else {
@@ -219,7 +219,7 @@ let maybeExtractPostingMessage = async function(m:Message):Promise<Boolean> {
       if (m.content().length >= 80 &&
           /租|rent|roomate|小区|公寓|lease/.test(m.content())) {
         let uid = await HsyBotLogger.logListing(m, HsyUtil.getHsyGroupEnum(m.room().topic()));
-        await m.from().say(`你好，你${
+        if (process.env.FULL_FEATURE) await m.from().say(`你好，你${
             WeChatyApiX.isTalkingToMePrivately(m) ? '私下' : `在${m.room().topic()} 里面`}
         发的租房信息我们已经同时发布到好室友™网站和App上了，欢迎查看和分享，链接为 ${HsyUtil.getLinkByHsyListingUid(uid)}&utm_campaign=message_generation`);
       }
@@ -283,6 +283,7 @@ let maybeDownsizeKeyRoom = async function(keyRoom: Room, c:Contact) {
 };
 
 let maybeAddToHsyGroups = async function(m:Message):Promise<Boolean> {
+  if (!process.env.FULL_FEATURE) return false;
   const contact = m.from();
   const content = m.content();
   const room = m.room();

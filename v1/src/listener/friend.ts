@@ -8,6 +8,7 @@ import {HsyBotLogger} from "../datastore";
 const logger = Logger.getLogger(`friend`);
 
 exports = module.exports = async function onFriend(contact:Contact, request) {
+  if (!process.env.FULL_FEATURE) return;
   if (request) {  // 1. request to be friend from new contact
     await HsyBotLogger.logFriendRequest(request);
     await request.accept();
