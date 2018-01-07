@@ -35,23 +35,28 @@ if (process.env.CLOUDINARY_SECRET !== undefined && process.env.CLOUDINARY_SECRET
 }
 
 exports = module.exports = async function onMessage(m:Message) {
-  logger.trace(`Received msg type: ${m.type()}`);
-  HsyBotLogger.logRawChatMsg(m).then(() => {/* does nothing, not waiting*/});
-  if (!HsyUtil.shouldCareAboutMessage(m)) {
-    return;
-  }
-  if (await HsyUtil.isHsyAdmin(m.from())) {
-    logger.info(`A message from Admin`);
-  } else if (await HsyUtil.isHsyBlacklisted(m.from())) {
-    logger.info(`A message from Blacklisted`);
-  } else {
-    logger.debug(`A message from normal contact`);
-  }
+  try {
+    logger.trace(`Received msg type: ${m.type()}`);
+    HsyBotLogger.logRawChatMsg(m).then(() => {/* does nothing, not waiting*/
+    });
+    if (!HsyUtil.shouldCareAboutMessage(m)) {
+      return;
+    }
+    if (await HsyUtil.isHsyAdmin(m.from())) {
+      logger.info(`A message from Admin`);
+    } else if (await HsyUtil.isHsyBlacklisted(m.from())) {
+      logger.info(`A message from Blacklisted`);
+    } else {
+      logger.debug(`A message from normal contact`);
+    }
 
-  await maybeBlacklistUser(m) || // if true stops further processing
-  await maybeAdminCommand(m) || // if true stops further processing
-  await maybeAddToHsyGroups(m) || // if true stops further processing
-  await maybeExtractPostingMessage(m);
+    await maybeBlacklistUser(m) || // if true stops further processing
+    await maybeAdminCommand(m) || // if true stops further processing
+    await maybeAddToHsyGroups(m) || // if true stops further processing
+    await maybeExtractPostingMessage(m);
+  } catch (e) {
+    logger.warn(e);
+  }
 };
 
 let findMemberFromGroup = function(room:Room, regExp:RegExp):Array<Contact> {
