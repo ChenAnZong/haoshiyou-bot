@@ -25,7 +25,21 @@ Query server link
 
 Or http://haoshiyou-server-dev.herokuapp.com/api/HsyListings?filter={%22where%22:%20{%22uid%22:%22group-collected-%E5%91%A8%E8%BD%BD%E5%8D%97%22}}
  
+## Work with git submodules
+
+We use submodules for `haoshiyou-ai`
+
+### Move path of a module
+
+We use
  
+```
+git mv old/submod new/submod
+```
+
+### Pull from `haoshiyou-ai`
+
+
 ## Roadmap
 
 * Basic function 

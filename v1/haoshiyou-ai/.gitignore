@@ -1,5 +1,0 @@
-testdata/*
-node_modules/
-*.js
-*.js.map
-.idea
