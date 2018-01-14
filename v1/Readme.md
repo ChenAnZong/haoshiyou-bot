@@ -37,8 +37,17 @@ We use
 git mv old/submod new/submod
 ```
 
-### Pull from `haoshiyou-ai`
+### submodule from `haoshiyou-ai`
 
+```shell
+git submodule add git@github.com:xinbenlv/haoshiyou-ai.git v1/haoshiyou-ai
+```
+
+### pull
+
+```shell
+git pull --recurse-submodules
+```
 
 ## Roadmap
 

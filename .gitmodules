@@ -1,3 +1,3 @@
-[submodule "haoshiyou-ai"]
-	path = v1/haoshiyou-ai/haoshiyou-ai
+[submodule "v1/haoshiyou-ai"]
+	path = v1/haoshiyou-ai
 	url = git@github.com:xinbenlv/haoshiyou-ai.git
