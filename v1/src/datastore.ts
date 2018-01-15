@@ -90,6 +90,7 @@ export class HsyBotLogger {
         == HsyListingTypeEnum[HsyListingTypeEnum.NeedRoom] ? 1 : 0;
     hsyListing.title = cleanContent.slice(0, 25);
     hsyListing.hsyGroupEnum = HsyGroupEnum[hsyGroupEnum];
+    hsyListing.hsyGroupNick = c.name();
     hsyListing.wechatId = m.from().weixin();
     hsyListing.price = HsyExtractor.extractPrice(m.content(), null);
     hsyListing.addressLine = HsyExtractor.extractFullAddr(m.content(), null);
@@ -128,6 +129,7 @@ export class HsyBotLogger {
       hsyListing.title = content;
       hsyListing.content = content;
       hsyListing.hsyGroupEnum = HsyGroupEnum[hsyGroupEnum];
+      hsyListing.hsyGroupNick = c.name();
       hsyListing.wechatId = m.from().weixin();
       hsyListing.imageIds = [imagePublicId];
     } else {
