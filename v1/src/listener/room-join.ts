@@ -59,7 +59,7 @@ let maybeWarnInviteeJoinedTooManyGroups = async function(room:Room,  inviteeList
   `;
   if (flag) {
     let bigTeam = await HsyUtil.findHsyBigTeamRoom();
-    bigTeam.say(buffer);
+    if (process.env.FULL_FEATURE) bigTeam.say(buffer);
   }
 };
 
@@ -79,7 +79,7 @@ let maybeRemoveBlacklistInviteeAndInviter = async function(
 
     if (shouldBlacklistInviter) {
       let teamRoom = await HsyUtil.findHsyRoomByKey("大军团");
-      await teamRoom.say(`${inviter} 邀请了黑名单用户 ` +
+      if (process.env.FULL_FEATURE) await teamRoom.say(`${inviter} 邀请了黑名单用户 ` +
           `${blackListedInviteeList} 进群${room.topic()}, ` +
           `下面开始清理.`);
       await HsyUtil.addToBlacklist(inviter);
@@ -90,17 +90,17 @@ let maybeRemoveBlacklistInviteeAndInviter = async function(
         await HsyUtil.kickContactFromRoom(c, room);
       });
 
-      await teamRoom.say(`清理完成！`);
+      if (process.env.FULL_FEATURE) await teamRoom.say(`清理完成！`);
   }
 };
 let sendWelcomeMessage = async function(room:Room, inviteeList:Contact[], inviter:Contact) {
   let hsyGroupenum = HsyUtil.getHsyGroupEnum(room.topic());
   let msg = `欢迎新群友${inviteeList.map(c=>`@${c.name()}${magicChar}`).join(',')}入群，
 想查看入群之前的帖子，点此 ${HsyUtil.getLinkByHsyGroupEnum(hsyGroupenum)}&utm_campaign=view_group_tap`;
-  await room.say(msg);
+  if (process.env.FULL_FEATURE) await room.say(msg);
   let msg2 = await HsyUtil.generateMsgByHsyGroupEnum(hsyGroupenum);
-  await room.say(msg2);
+  if (process.env.FULL_FEATURE) await room.say(msg2);
   if (!inviter.self()) {
-    await room.say(`感谢${inviter.name()}的邀请`);
+    if (process.env.FULL_FEATURE) await room.say(`感谢${inviter.name()}的邀请`);
   }
 };

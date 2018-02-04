@@ -127,23 +127,23 @@ let maybeBlacklistUser = async function(m: Message):Promise<Boolean> {
     let timeLapsedInSeconds = (Date.now() - blackListObj.time) / 1000;
     if (blackListObj !== null && blackListObj !== undefined) {
       if ( timeLapsedInSeconds>  60 * 5) {
-        await admin.say(`从刚才群内警告到现在确认加黑名单已经过了` +
+        if (process.env.FULL_FEATURE) await admin.say(`从刚才群内警告到现在确认加黑名单已经过了` +
             `${(timeLapsedInSeconds)/60}分钟，太久了，请重新警告`);
         delete GLOBAL_blackListCandidates[m.from().alias()];
       } else {
         let indexOfCandidate = m.content().slice(4); //"加黑名单1"取编号
         let contactToBlacklist:Contact = blackListObj.candidates[indexOfCandidate];
 
-        await admin.say(`正在把用户加入黑名单，` +
+        if (process.env.FULL_FEATURE) await admin.say(`正在把用户加入黑名单，` +
             `${WeChatyApiX.contactToStringLong(contactToBlacklist)}...`);
         await HsyUtil.addToBlacklist(contactToBlacklist);
 
         let teamRoom = await HsyUtil.findHsyBigTeamRoom();
-        await teamRoom.say(`应管理员${admin}的要求，` +
+        if (process.env.FULL_FEATURE) await teamRoom.say(`应管理员${admin}的要求，` +
             `正在踢出用户${WeChatyApiX.contactToStringLong(contactToBlacklist)}...`);
         await HsyUtil.kickFromAllHsyGroups(contactToBlacklist);
-        await teamRoom.say(`已完成`);
-        await admin.say(`搞定!`);
+        if (process.env.FULL_FEATURE) await teamRoom.say(`已完成`);
+        if (process.env.FULL_FEATURE) await admin.say(`搞定!`);
       }
     }
     return true;
@@ -172,7 +172,7 @@ let maybeBlacklistUser = async function(m: Message):Promise<Boolean> {
         logger.info(`管理员"${m.from().name()}"对用户 ${mentionName} 发出警告`);
 
         // Repeat the warning from the admin
-        await m.room().say(`感谢管理员@${m.from().name()}\n\n${m.content()}`);
+        if (process.env.FULL_FEATURE) await m.room().say(`感谢管理员@${m.from().name()}\n\n${m.content()}`);
 
         let buffer = `管理员 ${m.from().name()}，你好，你刚才在${m.room().topic()}这个群` +
             `里警告了用户@${mentionName}，符合这个名称的群内的用户有：\n`;
@@ -184,7 +184,7 @@ let maybeBlacklistUser = async function(m: Message):Promise<Boolean> {
         buffer += `请问要不要把这个用户加黑名单？五分钟内回复 "加黑名单[数字编号]"\n`;
         buffer += `例如 "加黑名单0"，将会把${foundUsers[1]} ` +
             `加入黑名单:${WeChatyApiX.contactToStringLong(foundUsers[0])}`;
-        await m.from().say(buffer);
+        if (process.env.FULL_FEATURE)  await m.from().say(buffer);
         GLOBAL_blackListCandidates[m.from().alias()] = {
           time: Date.now(),
           candidates: foundUsers
@@ -194,7 +194,7 @@ let maybeBlacklistUser = async function(m: Message):Promise<Boolean> {
       logger.warn(`Didn't found the user being warned against: ${mentionName}.`);
       logger.warn(`Full Member List of Group ${m.room().topic()}:`);
       logger.warn(`${m.room().memberList()}:`);
-      await admin.say(`管理员您好，您刚才在"${m.room().topic()}"群里要求踢出的用户"${mentionName}" `+
+      if (process.env.FULL_FEATURE) await admin.say(`管理员您好，您刚才在"${m.room().topic()}"群里要求踢出的用户"${mentionName}" `+
           `我们没有找到，请在确认该用户仍然在该群里，并且请在同一个群尝试at他的昵称而不是群昵称。`);
     }
     return true;
@@ -237,7 +237,7 @@ let maybeExtractPostingMessage = async function(m:Message):Promise<Boolean> {
 let maybeDownsizeKeyRoom = async function(keyRoom: Room, c:Contact) {
   if (/老友/.test(keyRoom.topic())) return;
   if (keyRoom.memberList().length >= groupDownSizeTriggerThreshold) { // triggering
-    await keyRoom.say(hsyGroupClearMsg);
+    if (process.env.FULL_FEATURE) await keyRoom.say(hsyGroupClearMsg);
     let potentialRotationList = [];
     let noGroupNickNames = [];
     let cList:Contact[] = keyRoom.memberList();
@@ -268,7 +268,7 @@ let maybeDownsizeKeyRoom = async function(keyRoom: Room, c:Contact) {
       }
     }
     if (shouldRemoveList.length > 0) {
-      await c.say(`群里有点儿满，我先清一下人哦`);
+      if (process.env.FULL_FEATURE) await c.say(`群里有点儿满，我先清一下人哦`);
     }
     await Promise.all(shouldRemoveList.map(async (c:Contact) => {
       await HsyBotLogger.logDebug(`Deleting contact ${c.name()} from group ${keyRoom.topic()}`);
@@ -278,7 +278,7 @@ let maybeDownsizeKeyRoom = async function(keyRoom: Room, c:Contact) {
               `请联系群主 周载南（微信号xinbenlv）加入"老友群"，` :
               `没有按照规则修改群昵称，`) +
           `这里我先把你挪出本群哈，随时加我（小助手，微信号haoshiyou-bot）重新入群。` + hsyReferMsg;
-      await c.say(msg);
+      if (process.env.FULL_FEATURE) await c.say(msg);
       await keyRoom.del(c);
     }));
   } else {
@@ -299,35 +299,35 @@ let maybeAddToHsyGroups = async function(m:Message):Promise<Boolean> {
         `content: ${m.content()}`);
     let groupToAdd:HsyGroupEnum = null;
     if (/加群/.test(content)) {
-      await m.say(greetingsMsg);
+      if (process.env.FULL_FEATURE) await m.say(greetingsMsg);
       return;
     } else {
       groupToAdd = HsyUtil.getAddGroupIndentFromMessage(content);
     }
     if (groupToAdd == HsyGroupEnum.None) { // found no valid group
-      await m.say(hsyCannotUnderstandMsg);
+      if (process.env.FULL_FEATURE) await m.say(hsyCannotUnderstandMsg);
     } else {
       await logger.info(`Start to add ${contact} to room ${groupToAdd}.`);
       await HsyBotLogger.logBotAddToGroupEvent(contact, groupToAdd);
-      await m.say(`好的，你要加${getStringFromHsyGroupEnum(groupToAdd)}的群对吧，我这就拉你进群。`);
+      if (process.env.FULL_FEATURE) await m.say(`好的，你要加${getStringFromHsyGroupEnum(groupToAdd)}的群对吧，我这就拉你进群。`);
       if (await HsyUtil.isHsyBlacklisted(m.from())) {
         logger.info(`黑名单用户 ${WeChatyApiX.contactToStringLong(m.from())}申请加入${groupToAdd}`);
-        await m.say(`我找找啊`);
-        await m.say(`不好意思，这个群暂时满了，我清理一下请稍等...`);
+        if (process.env.FULL_FEATURE) await m.say(`我找找啊`);
+        if (process.env.FULL_FEATURE) await m.say(`不好意思，这个群暂时满了，我清理一下请稍等...`);
         let teamRoom = await HsyUtil.findHsyRoomByKey("大军团");
-        await teamRoom.say(`黑名单用户 ${WeChatyApiX.contactToStringLong(m.from())}` +
+        if (process.env.FULL_FEATURE) await teamRoom.say(`黑名单用户 ${WeChatyApiX.contactToStringLong(m.from())}` +
             `申请加入${groupToAdd}, 我已经把他忽悠了。`);
         return; // early exit
       }
       let keyRoom = await HsyUtil.findHsyRoomByEnum(groupToAdd);
       if (keyRoom) {
         await maybeDownsizeKeyRoom(keyRoom, contact);
-        await keyRoom.add(contact);
-        await contact.say(hysAlreadyAddedMsg);
-        await contact.say(hsyGroupNickNameMsg);
-        await contact.say(hsyReferMsg);
+        if (process.env.FULL_FEATURE) await keyRoom.add(contact);
+        if (process.env.FULL_FEATURE) await contact.say(hysAlreadyAddedMsg);
+        if (process.env.FULL_FEATURE) await contact.say(hsyGroupNickNameMsg);
+        if (process.env.FULL_FEATURE) await contact.say(hsyReferMsg);
       } else {
-        await m.say(`囧...加群失败，请联系群主周载南(微信号:xinbenlv)。`);
+        if (process.env.FULL_FEATURE) await m.say(`囧...加群失败，请联系群主周载南(微信号:xinbenlv)。`);
         logger.info(`Can't find group ${groupToAdd}`);
       }
     }
@@ -384,7 +384,7 @@ async function kickAndOrBlacklist(m: Message, admin: Contact, shouldBlacklist:bo
           }
         }
         if (memberToDelete == null) {
-          await admin.say(`加黑时候找不到用户信息，请先发出命令"查重复"`);
+          if (process.env.FULL_FEATURE) await admin.say(`加黑时候找不到用户信息，请先发出命令"查重复"`);
           return;
         }
         // else does nothing, fall through
@@ -399,13 +399,13 @@ async function kickAndOrBlacklist(m: Message, admin: Contact, shouldBlacklist:bo
     }
     await HsyUtil.kickFromAllHsyGroups(memberToDelete);
     if (shouldBlacklist) {
-      await HsyUtil.addToBlacklist(memberToDelete);
-      await admin.say(`加黑完成：${WeChatyApiX.contactToStringLong(memberToDelete)} `);
+      if (process.env.FULL_FEATURE) await HsyUtil.addToBlacklist(memberToDelete);
+      if (process.env.FULL_FEATURE) await admin.say(`加黑完成：${WeChatyApiX.contactToStringLong(memberToDelete)} `);
     }
 
   } catch (e) {
     console.log(e);
-    await admin.say(`加黑命令发生错误，请检查格式和数字`);
+    if (process.env.FULL_FEATURE) await admin.say(`加黑命令发生错误，请检查格式和数字`);
 
   }
 }
@@ -416,7 +416,7 @@ async function checkOrKickRepeat(m: Message, admin: Contact, shouldKick:boolean 
   if (splitted.length >= 2 && parseInt(splitted[1])) {
     threshold = parseInt(splitted[1]);
   }
-  await admin.say(`开始查重复(threshold = ${threshold})...`);
+  if (process.env.FULL_FEATURE) await admin.say(`开始查重复(threshold = ${threshold})...`);
   MEMORY_allGroups = []; // clear it each time
   MEMORY_memberIdToMemberMap = {}; // clear it each time
   let memberIdToCountMap = {};
@@ -426,7 +426,7 @@ async function checkOrKickRepeat(m: Message, admin: Contact, shouldKick:boolean 
     let group = await HsyUtil.findHsyRoomByEnum(groupEnum);
     if (group == null) continue;
     MEMORY_allGroups.push(group);
-    await admin.say(`群: ${group.topic()}用户数为 ${group.memberList().length}`);
+    if (process.env.FULL_FEATURE) await admin.say(`群: ${group.topic()}用户数为 ${group.memberList().length}`);
     for (let member of group.memberList()) {
       if (await HsyUtil.isHsyAdmin(member)) continue; // skip admins
       if (member.id in memberIdToCountMap) {
@@ -448,18 +448,18 @@ async function checkOrKickRepeat(m: Message, admin: Contact, shouldKick:boolean 
     nonAdminBuffer += `${longName ? WeChatyApiX.contactToStringLong(m) : m.name()}, 重复次数: ${memberIdToCountMap[m.id]}\n`;
   }
   let responseBuffer = header + `--- NonAdmins: ---\n` + nonAdminBuffer;
-  await admin.say(responseBuffer);
+  if (process.env.FULL_FEATURE) await admin.say(responseBuffer);
   if (shouldKick) {
 
     for (let overThresholdMember of overThresholdMemberList) {
       for (let group of MEMORY_allGroups) {
         if (group.has(overThresholdMember)) {
-          await group.del(overThresholdMember);
-          await group.say(`把${overThresholdMember.name()}从本群里踢出`);
+          if (process.env.FULL_FEATURE) await group.del(overThresholdMember);
+          if (process.env.FULL_FEATURE)  group.say(`把${overThresholdMember.name()}从本群里踢出`);
         }
 
       }
-      await admin.say(`把${overThresholdMember.name()}从每个房间踢出了`);
+      if (process.env.FULL_FEATURE) await admin.say(`把${overThresholdMember.name()}从每个房间踢出了`);
     }
   }
 
@@ -470,7 +470,7 @@ let maybeAdminCommand = async function(m:Message) {
     let admin = m.from();
     if (/状态/.test(m.content())) {
       logger.info(`管理员${WeChatyApiX.contactToStringLong(admin)} says a command 状态.`);
-      await admin.say(`应${WeChatyApiX.contactToStringLong(admin)}的要求，` +
+      if (process.env.FULL_FEATURE) await admin.say(`应${WeChatyApiX.contactToStringLong(admin)}的要求，` +
           `开始回报好室友系列群的状态，生成报告中....`);
       let friends = await Contact.findAll();
       let reportStr = `好室友小助手好友总数 = ${friends.length}\n`;
@@ -490,7 +490,7 @@ let maybeAdminCommand = async function(m:Message) {
         reportStr += `微信群 ${report['group']} 里面的人数为${report['length']}\n`;
       });
       reportStr += `汇报完毕\n`;
-      await admin.say(reportStr);
+      if (process.env.FULL_FEATURE) await admin.say(reportStr);
       return true;
     } else if (/^列出/.test(m.content())) {
       try {
@@ -520,9 +520,9 @@ let maybeAdminCommand = async function(m:Message) {
 - "踢 [@id]": 会把所有租房群里面的id为[@id]的群友踢出去并在群内警告
 - "加黑 [@id]": 会把所有租房群里面的[@id]群友踢出去、加黑名单并在群内警告
 `;
-        await admin.say(responseBuffer);
+        if (process.env.FULL_FEATURE) await admin.say(responseBuffer);
       } catch (e) {
-        await admin.say(`发生错误: ${e}`);
+        if (process.env.FULL_FEATURE) await admin.say(`发生错误: ${e}`);
       }
       return true;
     } else if (/^踢 /.test(m.content())) {
@@ -538,7 +538,7 @@ let maybeAdminCommand = async function(m:Message) {
       await checkOrKickRepeat(m, admin, true);
       return true;
     } else {
-      await admin.say(
+      if (process.env.FULL_FEATURE) await admin.say(
 `亲爱的管理员${admin.name()}你好，感谢你的辛勤劳动，群友们都感谢你！
 以下是管理员命令(咒语):
 1. 跟小助手私下说：

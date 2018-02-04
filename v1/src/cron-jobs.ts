@@ -8,7 +8,7 @@ const reportRecentListingsToGroup = async function() {
     for (let hsyGroupEnum of ALL_RENTAL_HSY_GROUP_ENUMS) {
       let msg = await HsyUtil.generateMsgByHsyGroupEnum(hsyGroupEnum);
       let group = await HsyUtil.findHsyRoomByEnum(hsyGroupEnum);
-      await group.say(msg);
+      if (!process.env.FULL_FEATURE) await group.say(msg);
       logger.debug(`Says the following to ${group.topic()}:\n` + msg);
     }
 

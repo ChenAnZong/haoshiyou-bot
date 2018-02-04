@@ -127,9 +127,9 @@ export class HsyUtil {
       if(contact.self()) {
         logger.warn(`WARNING WARNING WARNING attempt to delete myself!`);
       } else {
-        await HsyUtil.kickContactFromRoom(contact, room);
+        if (process.env.FULL_FEATURE) await HsyUtil.kickContactFromRoom(contact, room);
         logger.trace(`已从从${room.topic()}群中踢出该用户.`);
-        await room.say(`经举报，用户${contact.name()}因违反群规被从本群及所有好室友系列租房群踢出。`);
+        if (process.env.FULL_FEATURE) await room.say(`经举报，用户${contact.name()}因违反群规被从本群及所有好室友系列租房群踢出。`);
       }
     }
   };
