@@ -18,6 +18,19 @@ import GcpStackdriverAppender from './log4ts-extension/GcpStackdriverAppender';
 
 const os = require('os');
 
+if ('FULL_FEATURE' in process.env) {
+ console.log(`FULL_FEATURE defined = ${process.env.FULL_FEATURE}`);
+
+} else {
+  console.log(`FULL_FEATURE NOT defined`);
+}
+
+if (process.env.FULL_FEATURE) {
+  console.log(`if (process.env.FULL_FEATURE) goes to true branch`);
+} else {
+  console.log(`if (process.env.FULL_FEATURE) goes to false branch`);
+}
+
 let configLogger = function() {
   let consoleAppender = new ConsoleAppender();
   let sdAppender = new GcpStackdriverAppender();
