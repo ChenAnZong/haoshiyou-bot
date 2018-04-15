@@ -6,7 +6,7 @@ import { Logger, LoggerConfig } from "log4ts";
 import {HsyUtil} from "./hsy-util";
 import {HsyBotLoggerType, HsyGroupEnum, HsyListingTypeEnum} from "./model";
 import {getStringFromHsyGroupEnum} from "./global";
-import {HsyExtractor} from '../haoshiyou-ai/extractor';
+import {HsyExtractor} from '../haoshiyou-ai/V2/extractor';
 import {HsyUser} from "../loopbacksdk/index";
 
 const file = 'log.json';
